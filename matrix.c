@@ -490,6 +490,11 @@ void transposeI(intMatrix *a){
 BOOL toStringD(char* dest, const doubleMatrix *a, size_t buffSize){
     int y, x;
     size_t length = buffSize - 1;
+    if (!dest){
+        printf("Destination buffer was null pointer\n");
+        return FALSE;
+    }
+    dest[0] = '\0';
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
             char strBuff[50] = {'\0'};
@@ -521,6 +526,11 @@ BOOL toStringD(char* dest, const doubleMatrix *a, size_t buffSize){
 BOOL toStringF(char* dest, const floatMatrix *a, size_t buffSize){
     int y, x;
     size_t length = buffSize - 1;
+    if (!dest){
+        printf("Destination buffer was null pointer\n");
+        return FALSE;
+    }
+    dest[0] = '\0';
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
             char strBuff[50] = {'\0'};
@@ -552,6 +562,11 @@ BOOL toStringF(char* dest, const floatMatrix *a, size_t buffSize){
 BOOL toStringI(char* dest, const intMatrix *a, size_t buffSize){
     int y, x;
     size_t length = buffSize - 1;
+    if (!dest){
+        printf("Destination buffer was null pointer\n");
+        return FALSE;
+    }
+    dest[0] = '\0';
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
             char strBuff[50] = {'\0'};
