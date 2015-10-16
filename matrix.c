@@ -5,10 +5,11 @@ Created by Andrew M. Hall
 #include "matrix.h"
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #define BUFF_LENGTH 2048
 
-//PThread
+//PThread - cofactor
 typedef struct {
     doubleMatrix * dest;
     const doubleMatrix * a;
@@ -27,336 +28,352 @@ typedef struct {
     int y;
 } cofactorArgI;
 
-BOOL matrixD(doubleMatrix * dest, double * in_data, int in_width, int in_height){
-    int size = in_width > in_height ? in_width : in_height;
+//PThread - multiply
+typedef struct {
+    doubleMatrix *dest;
+    const doubleMatrix *tmpRow;
+    const doubleMatrix *b;
+    int y;
+} multiplyArgD;
 
-    double *ptr = (double*)calloc(size*size, sizeof(double));
-    if (ptr == NULL){
-        printf("failed to allocate dynamic memory of size %lu bytes\n", in_width*in_height*sizeof(double));
-        return FALSE;
-    }
+typedef struct {
+    floatMatrix *dest;
+    floatMatrix *tmpRow;
+    const floatMatrix *b;
+    int y;
+} multiplyArgF;
+
+typedef struct {
+    intMatrix *dest;
+    const intMatrix *tmpRow;
+    const intMatrix *b;
+    int y;
+} multiplyArgI;
+
+MatrixError matrixD(doubleMatrix * dest, double * in_data, int in_width, int in_height){
+    double *ptr = (double*)malloc(in_height*in_width*sizeof(double));
+    if (!ptr)
+        return MEM_ALLOCATION_FAILURE;
+
     int y, x;
     int i = 0;
     for (y = 0; y < in_height; y++){
         for (x = 0; x < in_width; x++){
-            ptr[y * size + x] = in_data[i++];
+            ptr[y * in_width + x] = in_data[i++];
         }
     }
 
-    dest->data = ptr; dest->height=in_height; dest->width=in_width; dest->size=size;
-    return TRUE;
+    dest->data = ptr; dest->height=in_height; dest->width=in_width;
+    return SUCCESS;
 }
 
-BOOL matrixF(floatMatrix * dest, float * in_data, int in_width, int in_height){
-    int size = in_width > in_height ? in_width : in_height;
+MatrixError matrixF(floatMatrix * dest, float * in_data, int in_width, int in_height){
 
-    float *ptr = (float*)calloc(size*size, sizeof(float));
-    if (ptr == NULL){
-        printf("failed to allocate dynamic memory of size %lu bytes\n", in_width*in_height*sizeof(float));
-        return FALSE;
-    }
+    float *ptr = (float*)malloc(in_width*in_height*sizeof(float));
+    if (!ptr)
+        return MEM_ALLOCATION_FAILURE;
+
     int y, x;
     int i = 0;
     for (y = 0; y < in_height; y++){
         for (x = 0; x < in_width; x++){
-            ptr[y * size + x] = in_data[i++];
+            ptr[y * in_width + x] = in_data[i++];
         }
     }
 
-    dest->data = ptr; dest->height=in_height; dest->width=in_width; dest->size=size;
-    return TRUE;
+    dest->data = ptr; dest->height=in_height; dest->width=in_width;
+    return SUCCESS;
 }
 
-BOOL matrixI(intMatrix * dest, int * in_data, int in_width, int in_height){
-    int size = in_width > in_height ? in_width : in_height;
+MatrixError matrixI(intMatrix * dest, int * in_data, int in_width, int in_height){
 
-    int *ptr = (int*)calloc(size*size, sizeof(int));
-    if (ptr == NULL){
-        printf("failed to allocate dynamic memory of size %lu bytes\n", in_width*in_height*sizeof(int));
-        return FALSE;
-    }
+    int *ptr = (int*)malloc(in_width*in_height*sizeof(int));
+    if (!ptr)
+        return MEM_ALLOCATION_FAILURE;
+
     int y, x;
     int i = 0;
     for (y = 0; y < in_height; y++){
         for (x = 0; x < in_width; x++){
-            ptr[y * size + x] = in_data[i++];
+            ptr[y * in_width + x] = in_data[i++];
         }
     }
 
-    dest->data = ptr; dest->height=in_height; dest->width=in_width; dest->size=size;
-    return TRUE;
+    dest->data = ptr; dest->height=in_height; dest->width=in_width;
+    return SUCCESS;
 }
 
-BOOL matrixNullD(doubleMatrix * dest, int in_width, int in_height){
-    int size = in_width > in_height ? in_width : in_height;
+MatrixError matrixNullD(doubleMatrix * dest, int in_width, int in_height){
+    double *ptr = (double*)calloc(in_width*in_height, sizeof(double));
+    if (!ptr)
+        return MEM_ALLOCATION_FAILURE;
 
-    double *ptr = (double*)calloc(size*size, sizeof(double));
-    if (ptr == NULL){
-        printf("failed to allocate dynamic memory of size %lu bytes\n", in_width*in_height*sizeof(double));
-        return FALSE;
-    }
-
-    dest->data = ptr; dest->height=in_height; dest->width=in_width; dest->size=size;
-    return TRUE;
+    dest->data = ptr; dest->height=in_height; dest->width=in_width;
+    return SUCCESS;
 }
 
-BOOL matrixNullF(floatMatrix * dest, int in_width, int in_height){
-    int size = in_width > in_height ? in_width : in_height;
+MatrixError matrixNullF(floatMatrix * dest, int in_width, int in_height){
 
-    float *ptr = (float*)calloc(size*size, sizeof(float));
-    if (ptr == NULL){
-        printf("failed to allocate dynamic memory of size %lu bytes\n", in_width*in_height*sizeof(float));
-        return FALSE;
-    }
+    float *ptr = (float*)calloc(in_width*in_height, sizeof(float));
+    if (!ptr)
+        return MEM_ALLOCATION_FAILURE;
 
-    dest->data = ptr; dest->height=in_height; dest->width=in_width; dest->size=size;
-    return TRUE;
+    dest->data = ptr; dest->height=in_height; dest->width=in_width;
+    return SUCCESS;
 }
 
-BOOL matrixNullI(intMatrix * dest, int in_width, int in_height){
-    int size = in_width > in_height ? in_width : in_height;
+MatrixError matrixNullI(intMatrix * dest, int in_width, int in_height){
 
-    int *ptr = (int*)calloc(size*size, sizeof(int));
-    if (ptr == NULL){
-        printf("failed to allocate dynamic memory of size %lu bytes\n", in_width*in_height*sizeof(int));
-        return FALSE;
-    }
+    int *ptr = (int*)calloc(in_width*in_height, sizeof(int));
+    if (!ptr)
+        return MEM_ALLOCATION_FAILURE;
 
-    dest->data = ptr; dest->height=in_height; dest->width=in_width; dest->size=size;
-    return TRUE;
+    dest->data = ptr; dest->height=in_height; dest->width=in_width;
+    return SUCCESS;
 }
 
-BOOL destroymD(doubleMatrix * a){
-    if (a->data == NULL){
-        a = NULL;
-        return FALSE;
+void destroymD(doubleMatrix * a){
+    if (a->data){
+        free(a->data);
     }
-    free(a->data);
     a = NULL;
-    return TRUE;
 }
 
-BOOL destroymF(floatMatrix * a){
-    if (a->data == NULL){
-        a = NULL;
-        return FALSE;
+void destroymF(floatMatrix * a){
+    if (a->data){
+        free(a->data);
     }
-    free(a->data);
     a = NULL;
-    return TRUE;
 }
 
-BOOL destroymI(intMatrix * a){
-    if (a->data == NULL){
-        a = NULL;
-        return FALSE;
+void destroymI(intMatrix * a){
+    if (a->data){
+        free(a->data);
     }
-    free(a->data);
     a = NULL;
-    return TRUE;
 }
 
-BOOL matrixcpyD(doubleMatrix * dest, const doubleMatrix * src){
-    if (dest->width != src->width || dest->width != src->width){
-        printf("Destination matrix not formatted for matrixcpy call");
-        return FALSE;
-    }
+MatrixError matrixcpyD(doubleMatrix * dest, const doubleMatrix * src){
+    if (dest->width != src->width || dest->height != src->height)
+        return DIMENSION_ERROR;
+
     int y, x;
     for (y = 0; y < src->height; y++){
         for (x = 0; x < src->width; x++){
-            dest->data[y * dest->size + x] = atD(src, x, y);
+            dest->data[y * dest->width + x] = atD(src, x, y);
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL matrixcpyF(floatMatrix * dest, const floatMatrix * src){
-    if (dest->width != src->width || dest->width != src->width){
-        printf("Destination matrix not formatted for matrixcpy call");
-        return FALSE;
-    }
+MatrixError matrixcpyF(floatMatrix * dest, const floatMatrix * src){
+    if (dest->width != src->width || dest->height != src->height)
+        return DIMENSION_ERROR;
+
     int y, x;
     for (y = 0; y < src->height; y++){
         for (x = 0; x < src->width; x++){
-            dest->data[y * dest->size + x] = atF(src, x, y);
+            dest->data[y * dest->width + x] = atF(src, x, y);
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL matrixcpyI(intMatrix * dest, const intMatrix * src){
-    if (dest->width != src->width || dest->width != src->width){
-        printf("Destination matrix not formated for matrixcpy call");
-        return FALSE;
-    }
+MatrixError matrixcpyI(intMatrix * dest, const intMatrix * src){
+    if (dest->width != src->width || dest->height != src->height)
+        return DIMENSION_ERROR;
+
     int y, x;
     for (y = 0; y < src->height; y++){
         for (x = 0; x < src->width; x++){
-            dest->data[y * dest->size + x] = atI(src, x, y);
+            dest->data[y * dest->width + x] = atI(src, x, y);
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL printmD(const doubleMatrix *a){
+MatrixError printmD(const doubleMatrix *a){
     int mul = 10;
-    size_t buff_length = a->size * a->height * mul + 1;
-    char * strBuff = (char*)calloc(buff_length, sizeof(char));
+    size_t buff_length = a->width * a->height * mul + 1;
+    char * strBuff = (char*)malloc(buff_length*sizeof(char));
+    if (!strBuff)
+        return MEM_ALLOCATION_FAILURE;
+    strBuff[0] = '\0';
 
     int count = 0;
-    while (!toStringD(strBuff, a, buff_length) && count <= 10){
+    MatrixError e = toStringD(strBuff, a, buff_length);
+    while (e != SUCCESS && count <= 10){
         mul += 2;
-        buff_length = a->size * a->height * mul + 1;
+        buff_length = a->width * a->height * mul + 1;
         free(strBuff);
         strBuff = (char*)calloc(buff_length, sizeof(char));
+        if (!strBuff)
+            return MEM_ALLOCATION_FAILURE;
         count++;
+        e = toStringD(strBuff, a, buff_length);
     }
     if (count == 11){
-        printf("could not print full matrix\n");
-        return FALSE;
+        free(strBuff);
+        return e;
     }
 
     printf("%s\n", strBuff);
     fflush(stdout);
     free(strBuff);
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL printmF(const floatMatrix *a){
+MatrixError printmF(const floatMatrix *a){
     int mul = 10;
-    size_t buff_length = a->size * a->height * mul + 1;
-    char * strBuff = (char*)calloc(buff_length, sizeof(char));
+    size_t buff_length = a->width * a->height * mul + 1;
+    char * strBuff = (char*)malloc(buff_length*sizeof(char));
+    if (!strBuff)
+        return MEM_ALLOCATION_FAILURE;
+    strBuff[0] = '\0';
 
     int count = 0;
-    while (!toStringF(strBuff, a, buff_length) && count <= 5){
+    MatrixError e = toStringF(strBuff, a, buff_length);
+    while (e != SUCCESS && count <= 5){
         mul += 2;
-        buff_length = a->size * a->height * mul + 1;
+        buff_length = a->width * a->height * mul + 1;
         free(strBuff);
         strBuff = (char*)calloc(buff_length, sizeof(char));
+        if (!strBuff)
+            return MEM_ALLOCATION_FAILURE;
         count++;
+        e = toStringF(strBuff, a, buff_length);
     }
     if (count == 6){
-        printf("could not print full matrix\n");
-        return FALSE;
+        free(strBuff);
+        return e;
     }
 
     printf("%s\n", strBuff);
     fflush(stdout);
     free(strBuff);
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL printmI(const intMatrix *a){
+MatrixError printmI(const intMatrix *a){
     int mul = 10;
-    size_t buff_length = a->size * a->height * mul + 1;
-    char * strBuff = (char*)calloc(buff_length, sizeof(char));
+    size_t buff_length = a->width * a->height * mul + 1;
+    char * strBuff = (char*)malloc(buff_length*sizeof(char));
+    if (!strBuff)
+        return MEM_ALLOCATION_FAILURE;
+    strBuff[0] = '\0';
 
     int count = 0;
-    while (!toStringI(strBuff, a, buff_length) && count <= 5){
+    MatrixError e = toStringI(strBuff, a, buff_length);
+    while (e != SUCCESS && count <= 5){
         mul += 2;
-        buff_length = a->size * a->height * mul + 1;
+        buff_length = a->width * a->height * mul + 1;
         free(strBuff);
-        strBuff = (char*)calloc(buff_length, sizeof(char));
+        strBuff = (char*)malloc(buff_length*sizeof(char));
+        if (!strBuff)
+            return MEM_ALLOCATION_FAILURE;
+        strBuff[0] = '\0';
+
         count++;
+        e = toStringI(strBuff, a, buff_length);
     }
     if (count == 6){
-        printf("could not print full matrix\n");
-        return FALSE;
+        free(strBuff);
+        return e;
     }
 
     printf("%s\n", strBuff);
     fflush(stdout);
     free(strBuff);
-    return TRUE;
+    return SUCCESS;
 }
 
 double atD(const doubleMatrix* a, int x, int y){
-    return a->data[y * a->size + x];
+    return a->data[y * a->width + x];
 }
 
 float atF(const floatMatrix* a, int x, int y){
-    return a->data[y * a->size + x];
+    return a->data[y * a->width + x];
 }
 
 int atI(const intMatrix* a, int x, int y){
-    return a->data[y * a->size + x];
+    return a->data[y * a->width + x];
 }
 
-BOOL addD(doubleMatrix *a, const doubleMatrix *b){
+MatrixError addD(doubleMatrix *a, const doubleMatrix *b){
     if (a->height != b->height || a->width != b->width)
-        return FALSE;
+        return DIMENSION_ERROR;
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] += b->data[y * b->size + x];
+            a->data[y * a->width + x] += b->data[y * b->width + x];
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL addF(floatMatrix *a, const floatMatrix *b){
+MatrixError addF(floatMatrix *a, const floatMatrix *b){
     if (a->height != b->height || a->width != b->width)
-        return FALSE;
+        return DIMENSION_ERROR;
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] += b->data[y * b->size + x];
+            a->data[y * a->width + x] += b->data[y * b->width + x];
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL addI(intMatrix *a, const intMatrix *b){
+MatrixError addI(intMatrix *a, const intMatrix *b){
     if (a->height != b->height || a->width != b->width)
-        return FALSE;
+        return DIMENSION_ERROR;
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] += b->data[y * b->size + x];
+            a->data[y * a->width + x] += b->data[y * b->width + x];
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL subtractD(doubleMatrix *a, const doubleMatrix *b){
+MatrixError subtractD(doubleMatrix *a, const doubleMatrix *b){
     if (a->height != b->height || a->width != b->width)
-        return FALSE;
+        return DIMENSION_ERROR;
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] -= b->data[y * b->size + x];
+            a->data[y * a->width + x] -= b->data[y * b->width + x];
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
-BOOL subtractF(floatMatrix *a, const floatMatrix *b){
+MatrixError subtractF(floatMatrix *a, const floatMatrix *b){
     if (a->height != b->height || a->width != b->width)
-        return FALSE;
+        return DIMENSION_ERROR;
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] -= b->data[y * b->size + x];
+            a->data[y * a->width + x] -= b->data[y * b->width + x];
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
-BOOL subtractI(intMatrix *a, const intMatrix *b){
+MatrixError subtractI(intMatrix *a, const intMatrix *b){
     if (a->height != b->height || a->width != b->width)
-        return FALSE;
+        return DIMENSION_ERROR;
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] -= b->data[y * b->size + x];
+            a->data[y * a->width + x] -= b->data[y * b->width + x];
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
 void negativeD(doubleMatrix *a){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] *= (-1);
+            a->data[y * a->width + x] *= (-1);
         }
     }
 }
@@ -365,7 +382,7 @@ void negativeF(floatMatrix *a){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] *= (-1);
+            a->data[y * a->width + x] *= (-1);
         }
     }
 }
@@ -374,7 +391,7 @@ void negativeI(intMatrix *a){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] *= (-1);
+            a->data[y * a->width + x] *= (-1);
         }
     }
 }
@@ -383,7 +400,7 @@ void scalarMultiplyD(doubleMatrix * a, const double b){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] *= b;
+            a->data[y * a->width + x] *= b;
         }
     }
 }
@@ -392,7 +409,7 @@ void scalarMultiplyF(floatMatrix *a, const float b){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] *= b;
+            a->data[y * a->width + x] *= b;
         }
     }
 }
@@ -401,7 +418,7 @@ void scalarMultiplyI(intMatrix *a, const int b){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->width; x++){
-            a->data[y * a->size + x] *= b;
+            a->data[y * a->width + x] *= b;
         }
     }
 }
@@ -412,7 +429,7 @@ BOOL cmpD(const doubleMatrix *a, const doubleMatrix *b){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->height; x++){
-            if (a->data[y * a->size + x] != b->data[y * b->size + x])
+            if (a->data[y * a->width + x] != b->data[y * b->width + x])
                 return FALSE;
         }
     }
@@ -425,7 +442,7 @@ BOOL cmpF(const floatMatrix *a, const floatMatrix *b){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->height; x++){
-            if (a->data[y * a->size + x] != b->data[y * b->size + x])
+            if (a->data[y * a->width + x] != b->data[y * b->width + x])
                 return FALSE;
         }
     }
@@ -438,7 +455,7 @@ BOOL cmpI(const intMatrix *a, const intMatrix *b){
     int y, x;
     for (y = 0; y < a->height; y++){
         for (x = 0; x < a->height; x++){
-            if (a->data[y * a->size + x] != b->data[y * b->size + x])
+            if (a->data[y * a->width + x] != b->data[y * b->width + x])
                 return FALSE;
         }
     }
@@ -447,11 +464,11 @@ BOOL cmpI(const intMatrix *a, const intMatrix *b){
 
 void transposeD(doubleMatrix *a){
     int y, x;
-    for (y = 0; y < a->size; y++){
+    for (y = 0; y < a->width; y++){
         for (x = 0; x < y; x++){
-            double tmp = a->data[y*a->size + x];
-            a->data[y*a->size + x] = a->data[x*a->size + y];
-            a->data[x*a->size + y] = tmp;
+            double tmp = a->data[y*a->width + x];
+            a->data[y*a->width + x] = a->data[x*a->width + y];
+            a->data[x*a->width + y] = tmp;
         }
     }
     int tmp = a->width;
@@ -461,11 +478,11 @@ void transposeD(doubleMatrix *a){
 
 void transposeF(floatMatrix *a){
     int y, x;
-    for (y = 0; y < a->size; y++){
+    for (y = 0; y < a->width; y++){
         for (x = 0; x < y; x++){
-            float tmp = a->data[y*a->size + x];
-            a->data[y*a->size + x] = a->data[x*a->size + y];
-            a->data[x*a->size + y] = tmp;
+            float tmp = a->data[y*a->width + x];
+            a->data[y*a->width + x] = a->data[x*a->width + y];
+            a->data[x*a->width + y] = tmp;
         }
     }
     int tmp = a->width;
@@ -475,11 +492,11 @@ void transposeF(floatMatrix *a){
 
 void transposeI(intMatrix *a){
     int y, x;
-    for (y = 0; y < a->size; y++){
+    for (y = 0; y < a->width; y++){
         for (x = 0; x < y; x++){
-            int tmp = a->data[y*a->size + x];
-            a->data[y*a->size + x] = a->data[x*a->size + y];
-            a->data[x*a->size + y] = tmp;
+            int tmp = a->data[y*a->width + x];
+            a->data[y*a->width + x] = a->data[x*a->width + y];
+            a->data[x*a->width + y] = tmp;
         }
     }
     int tmp = a->width;
@@ -487,12 +504,12 @@ void transposeI(intMatrix *a){
     a->height = tmp;
 }
 
-BOOL toStringD(char* dest, const doubleMatrix *a, size_t buffSize){
+MatrixError toStringD(char* dest, const doubleMatrix *a, size_t buffsize){
     int y, x;
-    size_t length = buffSize - 1;
+    size_t length = buffsize - 1;
     if (!dest){
         printf("Destination buffer was null pointer\n");
-        return FALSE;
+        return BUFF_SIZE_ERROR;
     }
     dest[0] = '\0';
     for (y = 0; y < a->height; y++){
@@ -504,31 +521,31 @@ BOOL toStringD(char* dest, const doubleMatrix *a, size_t buffSize){
             if (length >= l){
                 length -= l;
             } else {
-                return FALSE;
+                return BUFF_SIZE_ERROR;
             }
             strncat(dest, "\t", length);
             if (length >= 2){
                 length -= 2;
             } else {
-                return FALSE;
+                return BUFF_SIZE_ERROR;
             }
         }
         strncat(dest, "\n", length);
         if (length >= 2){
             length -= 2;
         } else {
-            return FALSE;
+            return BUFF_SIZE_ERROR;
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL toStringF(char* dest, const floatMatrix *a, size_t buffSize){
+MatrixError toStringF(char* dest, const floatMatrix *a, size_t buffsize){
     int y, x;
-    size_t length = buffSize - 1;
+    size_t length = buffsize - 1;
     if (!dest){
         printf("Destination buffer was null pointer\n");
-        return FALSE;
+        return BUFF_SIZE_ERROR;
     }
     dest[0] = '\0';
     for (y = 0; y < a->height; y++){
@@ -540,31 +557,31 @@ BOOL toStringF(char* dest, const floatMatrix *a, size_t buffSize){
             if (length >= l){
                 length -= l;
             } else {
-                return FALSE;
+                return BUFF_SIZE_ERROR;
             }
             strncat(dest, "\t", length);
             if (length >= 2){
                 length -= 2;
             } else {
-                return FALSE;
+                return BUFF_SIZE_ERROR;
             }
         }
         strncat(dest, "\n", length);
         if (length >= 2){
             length -= 2;
         } else {
-            return FALSE;
+            return BUFF_SIZE_ERROR;
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL toStringI(char* dest, const intMatrix *a, size_t buffSize){
+MatrixError toStringI(char* dest, const intMatrix *a, size_t buffsize){
     int y, x;
-    size_t length = buffSize - 1;
+    size_t length = buffsize - 1;
     if (!dest){
         printf("Destination buffer was null pointer\n");
-        return FALSE;
+        return BUFF_SIZE_ERROR;
     }
     dest[0] = '\0';
     for (y = 0; y < a->height; y++){
@@ -576,46 +593,46 @@ BOOL toStringI(char* dest, const intMatrix *a, size_t buffSize){
             if (length >= l){
                 length -= l;
             } else {
-                return FALSE;
+                return BUFF_SIZE_ERROR;
             }
             strncat(dest, "\t", length);
             if (length >= 2){
                 length -= 2;
             } else {
-                return FALSE;
+                return BUFF_SIZE_ERROR;
             }
         }
         strncat(dest, "\n", length);
         if (length >= 2){
             length -= 2;
         } else {
-            return FALSE;
+            return BUFF_SIZE_ERROR;
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
 double determinant2x2D(const doubleMatrix *a)
 {
     if (a->height != 2 || a->width != 2){
-        printf("input matrix to determinant2x2D is not a 2x2 matrix\n");
-        exit(1);
+        puts(getErrorMessage(MATH_ERROR));
+        exit(EXIT_FAILURE);
     }
     return a->data[0] * a->data[3] - a->data[1] * a->data[2];
 }
 
 float determinant2x2F(const floatMatrix *a){
     if (a->height != 2 || a->width != 2){
-        printf("input matrix to determinant2x2F is not a 2x2 matrix\n");
-        exit(1);
+        puts(getErrorMessage(MATH_ERROR));
+        exit(EXIT_FAILURE);
     }
     return a->data[0] * a->data[3] - a->data[1] * a->data[2];
 }
 
 int determinant2x2I(const intMatrix *a){
     if (a->height != 2 || a->width != 2){
-        printf("input matrix to determinant2x2I is not a 2x2 matrix\n");
-        exit(1);
+        puts(getErrorMessage(MATH_ERROR));
+        exit(EXIT_FAILURE);
     }
     return a->data[0] * a->data[3] - a->data[1] * a->data[2];
 }
@@ -624,8 +641,8 @@ double determinantD(const doubleMatrix *a, int row){
     int w = a->width;
     int h = a->height;
     if (h != w){
-        printf("cannot take determinant of non square matrix\n");
-        exit(1);
+        puts(getErrorMessage(MATH_ERROR));
+        exit(EXIT_FAILURE);
     }
     double output = 0;
 
@@ -638,9 +655,10 @@ double determinantD(const doubleMatrix *a, int row){
             int ycount = 0;
 
             doubleMatrix tmp;
-            if (!matrixNullD(&tmp, w-1, h-1)){
-                printf("failed to allocate dynamic memory\n");
-                exit(1);
+            MatrixError e = matrixNullD(&tmp, w-1, h-1);
+            if (e != SUCCESS){
+                puts(getErrorMessage(e));
+                exit(EXIT_FAILURE);
             }
             int y;
             for (y = 0; y < h; y++){
@@ -650,13 +668,13 @@ double determinantD(const doubleMatrix *a, int row){
                     int x;
                     for (x = 0; x < w; x++){
                         if (x != tmpX){
-                            tmp.data[ycount * tmp.size + (xcount++)] = a->data[y * a->size + x];
+                            tmp.data[ycount * tmp.width + (xcount++)] = a->data[y * a->width + x];
                         }
                     }
                     ycount++;
                 }
             }
-            output += s ? ((determinantD(&tmp,0) * (a->data[row * a->size + tmpX]))) : -((determinantD(&tmp,0) * (a->data[row * a->size + tmpX])));
+            output += s ? ((determinantD(&tmp,0) * (a->data[row * a->width + tmpX]))) : -((determinantD(&tmp,0) * (a->data[row * a->width + tmpX])));
             s = !s;
             destroymD(&tmp);
         }
@@ -668,8 +686,8 @@ float determinantF(const floatMatrix *a, int row){
     int w = a->width;
     int h = a->height;
     if (h != w){
-        printf("cannot take determinant of non square matrix\n");
-        exit(1);
+        puts(getErrorMessage(MATH_ERROR));
+        exit(EXIT_FAILURE);
     }
     float output = 0;
 
@@ -680,11 +698,14 @@ float determinantF(const floatMatrix *a, int row){
         int tmpX;
         for (tmpX = 0; tmpX < w; tmpX++){
             int ycount = 0;
+
             floatMatrix tmp;
-            if (!matrixNullF(&tmp, w-1, h-1)){
-                printf("failed to allocate dynamic memory\n");
-                exit(1);
+            MatrixError e = matrixNullF(&tmp, w-1, h-1);
+            if (e != SUCCESS){
+                puts(getErrorMessage(e));
+                exit(EXIT_FAILURE);
             }
+
             int y;
             for (y = 0; y < h; y++){
                 if (y != row)
@@ -693,13 +714,13 @@ float determinantF(const floatMatrix *a, int row){
                     int x;
                     for (x = 0; x < w; x++){
                         if (x != tmpX){
-                            tmp.data[ycount * tmp.size + (xcount++)] = a->data[y * a->size + x];
+                            tmp.data[ycount * tmp.width + (xcount++)] = a->data[y * a->width + x];
                         }
                     }
                     ycount++;
                 }
             }
-            output += s ? ((determinantF(&tmp,0) * (a->data[row * a->size + tmpX]))) : -((determinantF(&tmp,0) * (a->data[row * a->size + tmpX])));
+            output += s ? ((determinantF(&tmp,0) * (a->data[row * a->width + tmpX]))) : -((determinantF(&tmp,0) * (a->data[row * a->width + tmpX])));
             s = !s;
             destroymF(&tmp);
         }
@@ -711,8 +732,8 @@ int determinantI(const intMatrix *a, int row){
     int w = a->width;
     int h = a->height;
     if (h != w){
-        printf("cannot take determinant of non square matrix\n");
-        exit(1);
+        puts(getErrorMessage(DIMENSION_ERROR));
+        exit(EXIT_FAILURE);
     }
     int output = 0;
 
@@ -725,10 +746,12 @@ int determinantI(const intMatrix *a, int row){
             int ycount = 0;
 
             intMatrix tmp;
-            if (!matrixNullI(&tmp, w-1, h-1)){
-                printf("failed to allocate dynamic memory\n");
-                exit(1);
+            MatrixError e = matrixNullI(&tmp, w-1, h-1);
+            if (e != SUCCESS){
+                puts(getErrorMessage(e));
+                exit(EXIT_FAILURE);
             }
+
             int y;
             for (y = 0; y < h; y++){
                 if (y != row)
@@ -737,13 +760,13 @@ int determinantI(const intMatrix *a, int row){
                     int x;
                     for (x = 0; x < w; x++){
                         if (x != tmpX){
-                            tmp.data[ycount * tmp.size + (xcount++)] = a->data[y * a->size + x];
+                            tmp.data[ycount * tmp.width + (xcount++)] = a->data[y * a->width + x];
                         }
                     }
                     ycount++;
                 }
             }
-            output += s ? ((determinantI(&tmp,0) * (a->data[row * a->size + tmpX]))) : -((determinantI(&tmp,0) * (a->data[row * a->size + tmpX])));
+            output += s ? ((determinantI(&tmp,0) * (a->data[row * a->width + tmpX]))) : -((determinantI(&tmp,0) * (a->data[row * a->width + tmpX])));
             s = !s;
             destroymI(&tmp);
         }
@@ -751,41 +774,38 @@ int determinantI(const intMatrix *a, int row){
     return output;
 }
 
-BOOL cofactorD(doubleMatrix * dest, const doubleMatrix *a){
-    if (a->size > 8 && a->size <= NTHREADS){
+MatrixError cofactorD(doubleMatrix * dest, const doubleMatrix *a){
+    if (a->width > 8 && a->width <= NTHREADS){
         return paraCofactorD(dest, a);
     } else {
         return stdCofactorD(dest, a);
     }
 }
 
-BOOL cofactorI(intMatrix * dest, const intMatrix *a){
-    if (a->size > 8 && a->size <= NTHREADS){
+MatrixError cofactorI(intMatrix * dest, const intMatrix *a){
+    if (a->width > 8 && a->width <= NTHREADS){
         return paraCofactorI(dest, a);
     } else {
         return stdCofactorI(dest, a);
     }
 }
 
-BOOL cofactorF(floatMatrix * dest, const floatMatrix *a){
-    if (a->size > 8 && a->size <= NTHREADS){
+MatrixError cofactorF(floatMatrix * dest, const floatMatrix *a){
+    if (a->width > 8 && a->width <= NTHREADS){
         return paraCofactorF(dest, a);
     } else {
         return stdCofactorF(dest, a);
     }
 }
 
-BOOL stdCofactorD(doubleMatrix * dest, const doubleMatrix *a){
+MatrixError stdCofactorD(doubleMatrix * dest, const doubleMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (h != w){
-        printf("cannot take cofactor of non square matrix\n");
-        return FALSE;
-    }
-    if (dest->height != h || dest->width != w){
-        printf("Destination matrix not formatted correctly for cofactor call\n");
-        return FALSE;
-    }
+    if (h != w)
+        return DIMENSION_ERROR;
+
+    if (dest->height != h || dest->width != w)
+        return DIMENSION_ERROR;
 
     int y;
     for (y = 0; y < h; y++){
@@ -793,7 +813,10 @@ BOOL stdCofactorD(doubleMatrix * dest, const doubleMatrix *a){
         for (x = 0; x < w; x++)
         {
             doubleMatrix det;
-            matrixNullD(&det, w-1, h-1);
+            MatrixError e = matrixNullD(&det, w-1, h-1);
+            if (e != SUCCESS)
+                return e;
+
             int ycount = 0;
             int ydet;
             for (ydet = 0; ydet < h; ydet++){
@@ -805,7 +828,7 @@ BOOL stdCofactorD(doubleMatrix * dest, const doubleMatrix *a){
                     {
                         if (xdet != x)
                         {
-                            det.data[ycount * det.size + (xcount++)] = atD(a, xdet, ydet);
+                            det.data[ycount * det.width + (xcount++)] = atD(a, xdet, ydet);
                         }
                     }
                     ycount++;
@@ -814,25 +837,27 @@ BOOL stdCofactorD(doubleMatrix * dest, const doubleMatrix *a){
 
             if ((y + x) % 2 == 0)
             {
-                dest->data[y * dest->size + x] = determinantD(&det, 0);
+                dest->data[y * dest->width + x] = determinantD(&det, 0);
             }
             else
             {
-                dest->data[y * dest->size + x] = -determinantD(&det, 0);
+                dest->data[y * dest->width + x] = -determinantD(&det, 0);
             }
             destroymD(&det);
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
 void * cofactorThreadD(void * m){
-    int s = ((cofactorArgD *)m)->dest->size;
+    int s = ((cofactorArgD *)m)->dest->width;
     int x;
     for (x = 0; x < s; x++){
         doubleMatrix det;
+        MatrixError e = matrixNullD(&det, s-1, s-1);
+        if (e != SUCCESS)
+            return NULL;
 
-        matrixNullD(&det, s-1, s-1);
         int ycount = 0;
         int ydet;
         for (ydet = 0; ydet < s; ydet++){
@@ -841,7 +866,7 @@ void * cofactorThreadD(void * m){
                 int xdet;
                 for (xdet = 0; xdet < s; xdet++){
                     if (xdet != x){
-                        det.data[ycount * det.size + (xcount++)] = atD(((cofactorArgD *)m)->a, xdet, ydet);
+                        det.data[ycount * det.width + (xcount++)] = atD(((cofactorArgD *)m)->a, xdet, ydet);
                     }
                 }
                 ycount++;
@@ -857,20 +882,17 @@ void * cofactorThreadD(void * m){
         }
         destroymD(&det);
     }
-    return NULL;
+    return SUCCESS;
 }
 
-BOOL paraCofactorD(doubleMatrix * dest, const doubleMatrix *a){
+MatrixError paraCofactorD(doubleMatrix * dest, const doubleMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (h != w){
-        printf("cannot take cofactor of non square matrix\n");
-        return FALSE;
-    }
-    if (dest->height != h || dest->width != w){
-        printf("Destination matrix not formatted correctly for cofactor call\n");
-        return FALSE;
-    }
+    if (h != w)
+        return DIMENSION_ERROR;
+
+    if (dest->height != h || dest->width != w)
+        return DIMENSION_ERROR;
 
     pthread_t threads[NTHREADS];
     cofactorArgD thread_args[NTHREADS];
@@ -884,20 +906,17 @@ BOOL paraCofactorD(doubleMatrix * dest, const doubleMatrix *a){
     for (y = 0; y < h; y++){
         pthread_join(threads[y], NULL);
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL stdCofactorF(floatMatrix * dest, const floatMatrix *a){
+MatrixError stdCofactorF(floatMatrix * dest, const floatMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (h != w){
-        printf("cannot take cofactor of non square matrix\n");
-        return FALSE;
-    }
-    if (dest->height != h || dest->width != w){
-        printf("Destination matrix not formated correctly for cofactor call\n");
-        return FALSE;
-    }
+    if (h != w)
+        return DIMENSION_ERROR;
+
+    if (dest->height != h || dest->width != w)
+        return DIMENSION_ERROR;
 
     int y;
     for (y = 0; y < h; y++)
@@ -906,7 +925,9 @@ BOOL stdCofactorF(floatMatrix * dest, const floatMatrix *a){
         for (x = 0; x < w; x++)
         {
             floatMatrix det;
-            matrixNullF(&det, w-1, h-1);
+            MatrixError e = matrixNullF(&det, w-1, h-1);
+            if (e != SUCCESS)
+                return e;
 
             int ycount = 0;
             int ydet;
@@ -920,7 +941,7 @@ BOOL stdCofactorF(floatMatrix * dest, const floatMatrix *a){
                     {
                         if (xdet != x)
                         {
-                            det.data[ycount * det.size + (xcount++)] = a->data[ydet * a->size + xdet];
+                            det.data[ycount * det.width + (xcount++)] = a->data[ydet * a->width + xdet];
                         }
                     }
                     ycount++;
@@ -928,25 +949,27 @@ BOOL stdCofactorF(floatMatrix * dest, const floatMatrix *a){
             }
             if ((y + x) % 2 == 0)
             {
-                dest->data[y * dest->size + x] = determinantF(&det, 0);
+                dest->data[y * dest->width + x] = determinantF(&det, 0);
             }
             else
             {
-                dest->data[y * dest->size + x] = -determinantF(&det, 0);
+                dest->data[y * dest->width + x] = -determinantF(&det, 0);
             }
             destroymF(&det);
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
 
 void * cofactorThreadF(void * m){
-    int s = ((cofactorArgF *)m)->dest->size;
+    int s = ((cofactorArgF *)m)->dest->width;
     int x;
     for (x = 0; x < s; x++){
         floatMatrix det;
-        matrixNullF(&det, s-1, s-1);
+        MatrixError e = matrixNullF(&det, s-1, s-1);
+        if (e != SUCCESS)
+            return NULL;
 
         int ycount = 0;
         int ydet;
@@ -956,7 +979,7 @@ void * cofactorThreadF(void * m){
                 int xdet;
                 for (xdet = 0; xdet < s; xdet++){
                     if (xdet != x){
-                        det.data[ycount * det.size + (xcount++)] = atF(((cofactorArgF *)m)->a, xdet, ydet);
+                        det.data[ycount * det.width + (xcount++)] = atF(((cofactorArgF *)m)->a, xdet, ydet);
                     }
                 }
                 ycount++;
@@ -975,16 +998,14 @@ void * cofactorThreadF(void * m){
     return NULL;
 }
 
-BOOL paraCofactorF(floatMatrix * dest, const floatMatrix *a){
+MatrixError paraCofactorF(floatMatrix * dest, const floatMatrix *a){
     int w = a->width;
     int h = a->height;
     if (h != w){
-        printf("cannot take cofactor of non square matrix\n");
-        return FALSE;
+        return DIMENSION_ERROR;
     }
     if (dest->height != h || dest->width != w){
-        printf("Destination matrix not formatted correctly for cofactor call\n");
-        return FALSE;
+        return DIMENSION_ERROR;
     }
 
     pthread_t threads[NTHREADS];
@@ -999,20 +1020,17 @@ BOOL paraCofactorF(floatMatrix * dest, const floatMatrix *a){
     for (y = 0; y < h; y++){
         pthread_join(threads[y], NULL);
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL stdCofactorI(intMatrix * dest, const intMatrix *a){
+MatrixError stdCofactorI(intMatrix * dest, const intMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (h != w){
-        printf("cannot take cofactor of non square matrix\n");
-        return FALSE;
-    }
-    if (dest->height != h || dest->width != w){
-        printf("Destination matrix not formated correctly for cofactor call\n");
-        return FALSE;
-    }
+    if (h != w)
+        return DIMENSION_ERROR;
+
+    if (dest->height != h || dest->width != w)
+        return DIMENSION_ERROR;
 
     int y;
     for (y = 0; y < h; y++)
@@ -1020,14 +1038,11 @@ BOOL stdCofactorI(intMatrix * dest, const intMatrix *a){
         int x;
         for (x = 0; x < w; x++)
         {
-            int *ptr2 = (int*)calloc((a->size - 1) * (a->size - 1), sizeof(int));
-            if (ptr2 == NULL){
-                printf("failed to allocate dynamic memory of size %lu bytes\n", sizeof(int)*(a->size - 1) * (a->size - 1));
-                return FALSE;
-            }
-
             intMatrix det;
-            matrixNullI(&det, w-1, h-1);
+            MatrixError e = matrixNullI(&det, w-1, h-1);
+            if (e != SUCCESS)
+                return e;
+
             int ycount = 0;
             int ydet;
             for (ydet = 0; ydet < h; ydet++)
@@ -1040,7 +1055,7 @@ BOOL stdCofactorI(intMatrix * dest, const intMatrix *a){
                     {
                         if (xdet != x)
                         {
-                            det.data[ycount * det.size + (xcount++)] = a->data[ydet * a->size + xdet];
+                            det.data[ycount * det.width + (xcount++)] = a->data[ydet * a->width + xdet];
                         }
                     }
                     ycount++;
@@ -1048,24 +1063,26 @@ BOOL stdCofactorI(intMatrix * dest, const intMatrix *a){
             }
             if ((y + x) % 2 == 0)
             {
-                dest->data[y * dest->size + x] = determinantI(&det, 0);
+                dest->data[y * dest->width + x] = determinantI(&det, 0);
             }
             else
             {
-                dest->data[y * dest->size + x] = -determinantI(&det, 0);
+                dest->data[y * dest->width + x] = -determinantI(&det, 0);
             }
             destroymI(&det);
         }
     }
-    return TRUE;
+    return SUCCESS;
 }
 
 void * cofactorThreadI(void * m){
-    int s = ((cofactorArgI *)m)->dest->size;
+    int s = ((cofactorArgI *)m)->dest->width;
     int x;
     for (x = 0; x < s; x++){
         intMatrix det;
-        matrixNullI(&det, s-1, s-1);
+        MatrixError e = matrixNullI(&det, s-1, s-1);
+        if (e != SUCCESS)
+            return NULL;
 
         int ycount = 0;
         int ydet;
@@ -1075,7 +1092,7 @@ void * cofactorThreadI(void * m){
                 int xdet;
                 for (xdet = 0; xdet < s; xdet++){
                     if (xdet != x){
-                        det.data[ycount * det.size + (xcount++)] = atI(((cofactorArgI *)m)->a, xdet, ydet);
+                        det.data[ycount * det.width + (xcount++)] = atI(((cofactorArgI *)m)->a, xdet, ydet);
                     }
                 }
                 ycount++;
@@ -1094,17 +1111,14 @@ void * cofactorThreadI(void * m){
     return NULL;
 }
 
-BOOL paraCofactorI(intMatrix * dest, const intMatrix *a){
+MatrixError paraCofactorI(intMatrix * dest, const intMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (h != w){
-        printf("cannot take cofactor of non square matrix\n");
-        return FALSE;
-    }
-    if (dest->height != h || dest->width != w){
-        printf("Destination matrix not formatted correctly for cofactor call\n");
-        return FALSE;
-    }
+    if (h != w)
+        return DIMENSION_ERROR;
+
+    if (dest->height != h || dest->width != w)
+        return DIMENSION_ERROR;
 
     pthread_t threads[NTHREADS];
     cofactorArgI thread_args[NTHREADS];
@@ -1118,49 +1132,48 @@ BOOL paraCofactorI(intMatrix * dest, const intMatrix *a){
     for (y = 0; y < h; y++){
         pthread_join(threads[y], NULL);
     }
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL adjointD(doubleMatrix * dest, const doubleMatrix *a){
-    if (cofactorD(dest, a)){
+MatrixError adjointD(doubleMatrix * dest, const doubleMatrix *a){
+    MatrixError e = cofactorD(dest, a);
+    if (e == SUCCESS){
         transposeD(dest);
-        return TRUE;
+        return SUCCESS;
     }
-    return FALSE;
+    return e;
 }
 
-BOOL adjointF(floatMatrix * dest, const floatMatrix *a){
-    if (cofactorF(dest, a)){
+MatrixError adjointF(floatMatrix * dest, const floatMatrix *a){
+    MatrixError e = cofactorF(dest, a);
+    if (e == SUCCESS){
         transposeF(dest);
-        return TRUE;
+        return SUCCESS;
     }
-    return FALSE;
+    return e;
 }
 
 
-BOOL adjointI(intMatrix * dest, const intMatrix *a){
-    if (cofactorI(dest, a)){
+MatrixError adjointI(intMatrix * dest, const intMatrix *a){
+    MatrixError e = cofactorI(dest, a);
+    if (e == SUCCESS){
         transposeI(dest);
-        return TRUE;
+        return SUCCESS;
     }
-    return FALSE;
+    return e;
 }
 
-BOOL invert2x2D(doubleMatrix * dest, const doubleMatrix *a){
-    if (a->width != 2 || a->width != 2){
-        printf("cannot call invert2x3F on non 2x2 matrix\n");
-        return FALSE;
-    }
-    if (dest->width != 2 || dest->height != 2){
-        printf("Destination matrix not formatted propperly for inversion\n");
-        return FALSE;
-    }
+MatrixError invert2x2D(doubleMatrix * dest, const doubleMatrix *a){
+    if (a->width != 2 || a->width != 2)
+        return DIMENSION_ERROR;
+
+    if (dest->width != 2 || dest->height != 2)
+        return DIMENSION_ERROR;
 
     double det = determinant2x2D(a);
-    if (!det){
-        printf("cannot invert matrix with 0 determinant\n");
-        return FALSE;
-    }
+    if (!det)
+        return MATH_ERROR;
+
     double d = 1.0 / det;
 
     double tmp0 = a->data[0];
@@ -1170,25 +1183,21 @@ BOOL invert2x2D(doubleMatrix * dest, const doubleMatrix *a){
     dest->data[2] = -a->data[2] * d;
     dest->data[3] = tmp0 * d;
 
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL invert2x2F(doubleMatrix * dest, const floatMatrix *a){
-    if (a->width != 2 || a->width != 2){
-        printf("cannot call invert2x2F on non 2x2 matrix\n");
-        return FALSE;
-    }
+MatrixError invert2x2F(doubleMatrix * dest, const floatMatrix *a){
+    if (a->width != 2 || a->width != 2)
+        return DIMENSION_ERROR;
 
-    if (dest->width != 2 || dest->height != 2){
-        printf("Destination matrix not formatted propperly for inversion\n");
-        return FALSE;
-    }
+    if (dest->width != 2 || dest->height != 2)
+        return DIMENSION_ERROR;
+
 
     double det = (double)determinant2x2F(a);
-    if (!det){
-        printf("cannot invert matrix with 0 determinant\n");
-        return FALSE;
-    }
+    if (!det)
+        return MATH_ERROR;
+
     double d = 1.0 / det;
 
     double tmp0 = (double) a->data[0];
@@ -1198,24 +1207,20 @@ BOOL invert2x2F(doubleMatrix * dest, const floatMatrix *a){
     dest->data[2] = (double) (-a->data[2] * d);
     dest->data[3] = (double) (tmp0 * d);
 
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL invert2x2I(doubleMatrix * dest, const intMatrix *a){
-    if (a->width != 2 || a->width != 2){
-        printf("cannot call invert2x2F on non 2x2 matrix\n");
-        return FALSE;
-    }
-    if (dest->width != 2 || dest->height != 2){
-        printf("Destination matrix not formatted propperly for inversion\n");
-        return FALSE;
-    }
+MatrixError invert2x2I(doubleMatrix * dest, const intMatrix *a){
+    if (a->width != 2 || a->width != 2)
+        return DIMENSION_ERROR;
+
+    if (dest->width != 2 || dest->height != 2)
+        return DIMENSION_ERROR;
 
     double det = (double)determinant2x2I(a);
-    if (!det){
-        printf("cannot invert matrix with 0 determinant\n");
-        return FALSE;
-    }
+    if (!det)
+        return MATH_ERROR;
+
     double d = 1.0 / det;
 
     double tmp0 = (double) a->data[0];
@@ -1225,126 +1230,586 @@ BOOL invert2x2I(doubleMatrix * dest, const intMatrix *a){
     dest->data[2] = (double) (-a->data[2] * d);
     dest->data[3] = (double) (tmp0 * d);
 
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL invertD(doubleMatrix * dest, const doubleMatrix *a){
+MatrixError invertD(doubleMatrix * dest, const doubleMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (w != h){
-        printf("cannot call invert2x3F on non 2x2 matrix\n");
-        exit(1);
-    }
-    if (dest->width != dest->height || dest->data == NULL){
-        printf("Destination matrix not initialised appropriatly for inverting\n");
-        return FALSE;
-    }
-    if (h == 2){
+    if (w != h)
+        return DIMENSION_ERROR;
+
+    if (dest->width != dest->height || dest->data == NULL)
+        return DIMENSION_ERROR;
+
+    if (h == 2)
         return invert2x2D(dest, a);
-    }
 
     double det = determinantD(a,0);
-    if (!det){
-        printf("cannot invert matrix with 0 determinant\n");
-        return FALSE;
-    }
+    if (!det)
+        return MATH_ERROR;
 
     int y, x;
     for (y = 0; y < h; y++){
         for (x = 0; x < w; x++){
-            dest->data[y * dest->size + x] = atD(a, x, y);
+            dest->data[y * dest->width + x] = atD(a, x, y);
         }
     }
 
     doubleMatrix tmpM;
     matrixD(&tmpM, dest->data, dest->width, dest->height);
 
-    if (!adjointD(dest, &tmpM))
-        return FALSE;
+    MatrixError e = adjointD(dest, &tmpM);
 
     destroymD(&tmpM);
 
+    if (e != SUCCESS)
+        return e;
+
     scalarMultiplyD(dest, 1.0/det);
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL invertF(doubleMatrix * dest, const floatMatrix *a){
+MatrixError invertF(doubleMatrix * dest, const floatMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (w != h){
-        printf("cannot call invert2x2F on non 2x2 matrix\n");
-        return FALSE;
-    }
-    if (dest->width != dest->height || dest->data == NULL){
-        printf("Destination matrix not initialised appropriatly for inverting\n");
-        return FALSE;
-    }
-    if (h == 2){
+    if (w != h)
+        return DIMENSION_ERROR;
+
+    if (dest->width != dest->height || dest->data == NULL)
+        return DIMENSION_ERROR;
+
+    if (h == 2)
         return invert2x2F(dest, a);
-    }
 
     double det = (double)determinantF(a,0);
-    if (!det){
-        printf("cannot invert matrix with 0 determinant\n");
-        return FALSE;
-    }
+    if (!det)
+        return MATH_ERROR;
 
     int y, x;
     for (y = 0; y < h; y++){
         for (x = 0; x < w; x++){
-            dest->data[y * dest->size + x] = (double)atF(a, x, y);
+            dest->data[y * dest->width + x] = (double)atF(a, x, y);
         }
     }
 
     doubleMatrix tmpM;
-    matrixD(&tmpM, dest->data, dest->width, dest->height);
+    MatrixError e = matrixD(&tmpM, dest->data, dest->width, dest->height);
+    if (e != SUCCESS)
+        return e;
 
-    if (!adjointD(dest, &tmpM))
-        return FALSE;
-
+    e = adjointD(dest, &tmpM);
     destroymD(&tmpM);
+    if (e != SUCCESS)
+        return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return TRUE;
+    return SUCCESS;
 }
 
-BOOL invertI(doubleMatrix * dest, const intMatrix *a){
+MatrixError invertI(doubleMatrix * dest, const intMatrix *a){
     int w = a->width;
     int h = a->height;
-    if (w != h){
-        printf("cannot call invert2x3F on non 2x2 matrix\n");
-        return FALSE;
-    }
-    if (dest->width != dest->height || dest->data == NULL){
-        printf("Destination matrix not initialised appropriatly for inverting\n");
-        return FALSE;
-    }
-    if (h == 2){
+    if (w != h)
+        return DIMENSION_ERROR;
+
+    if (dest->width != dest->height || dest->data == NULL)
+        return DIMENSION_ERROR;
+
+    if (h == 2)
         return invert2x2I(dest, a);
-    }
 
     double det = (double)determinantI(a,0);
-    if (!det){
-        printf("cannot invert matrix with 0 determinant\n");
-        exit(1);
-    }
+    if (!det)
+        return MATH_ERROR;
 
     int y, x;
     for (y = 0; y < h; y++){
         for (x = 0; x < w; x++){
-            dest->data[y * dest->size + x] = (double)atI(a, x, y);
+            dest->data[y * dest->width + x] = (double)atI(a, x, y);
         }
     }
 
     doubleMatrix tmpM;
-    matrixD(&tmpM, dest->data, dest->width, dest->height);
+    MatrixError e = matrixD(&tmpM, dest->data, dest->width, dest->height);
+    if (e != SUCCESS)
+        return e;
 
-    if (!adjointD(dest, &tmpM))
-        return FALSE;
-
+    e = adjointD(dest, &tmpM);
     destroymD(&tmpM);
-
+    if (e != SUCCESS)
+        return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return TRUE;
+    return SUCCESS;
+}
+
+MatrixError getColD(doubleMatrix *dest, const doubleMatrix *a, int x){
+    if (x < 0 || x >= a->width)
+        return FAILURE;
+    if (dest->height != a->height || dest->width != 1)
+        return DIMENSION_ERROR;
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        dest->data[y] = atD(a, x, y);
+    }
+    return SUCCESS;
+}
+
+MatrixError getColF(floatMatrix *dest, const floatMatrix *a, int x){
+    if (x < 0 || x >= a->width)
+        return FAILURE;
+    if (dest->height != a->height || dest->width != 1)
+        return DIMENSION_ERROR;
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        dest->data[y] = atF(a, x, y);
+    }
+    return SUCCESS;
+}
+
+MatrixError getColI(intMatrix *dest, const intMatrix *a, int x){
+    if (x < 0 || x >= a->width)
+        return FAILURE;
+    if (dest->height != a->height || dest->width != 1)
+        return DIMENSION_ERROR;
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        dest->data[y] = atI(a, x, y);
+    }
+    return SUCCESS;
+}
+
+MatrixError getRowD(doubleMatrix *dest, const doubleMatrix *a, int y){
+    if (y < 0 || y >= a->height)
+        return FAILURE;
+    if (dest->width != a->width || dest->height != 1)
+        return DIMENSION_ERROR;
+
+    memcpy((void*)dest->data, (void*)(a->data+y*a->width), a->width * sizeof(double));
+    return SUCCESS;
+}
+
+MatrixError getRowF(floatMatrix *dest, const floatMatrix *a, int y){
+    if (y < 0 || y >= a->height)
+        return FAILURE;
+    if (dest->width != a->width || dest->height != 1)
+        return DIMENSION_ERROR;
+
+    memcpy((void*)dest->data, (void*)(a->data+ y*a->width), a->width * sizeof(float));
+    return SUCCESS;
+}
+MatrixError getRowI(intMatrix *dest, const intMatrix *a, int y){
+    if (y < 0 || y >= a->height)
+        return FAILURE;
+    if (dest->width != a->width || dest->height != 1)
+        return DIMENSION_ERROR;
+
+    memcpy((void*)dest->data, (void*)(a->data + y*a->width), a->width * sizeof(int));
+    return SUCCESS;
+}
+
+MatrixError crossProductD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b){
+    //dest, a & b must be in R^3
+    if (a->width != 1 || a->height != 3 || b->width != 1 || b->height != 3 || dest->height != 3 || dest->width != 1){
+        return DIMENSION_ERROR;
+    }
+    dest->data[0] = atD(a, 0, 1) * atD(b, 0, 2) - atD(a, 0, 2) * atD(b, 0, 1);
+    dest->data[1] = atD(a, 0, 2) * atD(b, 0, 0) - atD(a, 0, 0) * atD(b, 0, 2);
+    dest->data[2] = atD(a, 0, 0) * atD(b, 0, 1) - atD(a, 0, 1) * atD(b, 0, 0);
+    return SUCCESS;
+}
+
+MatrixError crossProductF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b){
+    //dest, a & b must be in R^3
+    if (a->width != 1 || a->height != 3 || b->width != 1 || b->height != 3 || dest->height != 3 || dest->width != 1){
+        return DIMENSION_ERROR;
+    }
+    dest->data[0] = atF(a, 0, 1) * atF(b, 0, 2) - atF(a, 0, 2) * atF(b, 0, 1);
+    dest->data[1] = atF(a, 0, 2) * atF(b, 0, 0) - atF(a, 0, 0) * atF(b, 0, 2);
+    dest->data[2] = atF(a, 0, 0) * atF(b, 0, 1) - atF(a, 0, 1) * atF(b, 0, 0);
+    return SUCCESS;
+}
+
+MatrixError crossProductI(intMatrix *dest, const intMatrix *a, const intMatrix *b){
+    //dest, a & b must be in R^3
+    if (a->width != 1 || a->height != 3 || b->width != 1 || b->height != 3 || dest->height != 3 || dest->width != 1){
+        return DIMENSION_ERROR;
+    }
+    dest->data[0] = atI(a, 0, 1) * atI(b, 0, 2) - atI(a, 0, 2) * atI(b, 0, 1);
+    dest->data[1] = atI(a, 0, 2) * atI(b, 0, 0) - atI(a, 0, 0) * atI(b, 0, 2);
+    dest->data[2] = atI(a, 0, 0) * atI(b, 0, 1) - atI(a, 0, 1) * atI(b, 0, 0);
+    return SUCCESS;
+}
+
+double dotProductD(const doubleMatrix *a, const doubleMatrix *b){
+    //a & b must be in R^n
+    if (a->width != 1 || b->width != 1 || a->height != b->height){
+        puts(getErrorMessage(DIMENSION_ERROR));
+    }
+
+    double output = 0;
+    int i;
+    for (i = 0; i < a->height; i++){
+        output += a->data[i] * b->data[i];
+    }
+    return output;
+}
+
+float dotProductF(const floatMatrix *a, const floatMatrix *b){
+    //a & b must be in R^n
+    if (a->width != 1 || b->width != 1 || a->height != b->height){
+        puts(getErrorMessage(DIMENSION_ERROR));
+    }
+
+    float output = 0;
+    int i;
+    for (i = 0; i < a->height; i++){
+        output += a->data[i] * b->data[i];
+    }
+    return output;
+}
+
+int dotProductI(const intMatrix *a, const intMatrix *b){
+    //a & b must be in R^n
+    if (a->width != 1 || b->width != 1 || a->height != b->height){
+        puts(getErrorMessage(DIMENSION_ERROR));
+    }
+
+    int output = 0;
+    int i;
+    for (i = 0; i < a->height; i++){
+        output += a->data[i] * b->data[i];
+    }
+    return output;
+}
+
+MatrixError multiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b){
+    int size = a->width > a->height ? a->width : a->height;
+    if (size > 10 && size <= NTHREADS){
+        return paraMultiplyD(dest, a, b);
+    } else {
+        return stdMultiplyD(dest, a, b);
+    }
+}
+
+void * multiplyThreadD(void * arg){
+    int x;
+    for (x = 0; x < ((multiplyArgD*)arg)->b->width; x++){
+        doubleMatrix tmpCol;
+        MatrixError e = matrixNullD(&tmpCol, 1, ((multiplyArgD*)arg)->b->height);
+        if (e != SUCCESS)
+            return NULL;
+        e = getColD(&tmpCol, ((multiplyArgD*)arg)->b, x);
+        if (e != SUCCESS){
+            destroymD(&tmpCol);
+            return NULL;
+        }
+        double dp = 0;
+        int i;
+        for (i = 0; i < tmpCol.height; i++){
+            dp += ((multiplyArgD*)arg)->tmpRow->data[i] * tmpCol.data[i];
+        }
+        ((multiplyArgD*)arg)->dest->data[(((multiplyArgD*)arg)->y)*(((multiplyArgD*)arg)->dest->width) + x] = dp;
+        destroymD(&tmpCol);
+    }
+    return NULL;
+}
+
+MatrixError paraMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b){
+    if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
+        return DIMENSION_ERROR;
+
+    pthread_t threads[NTHREADS];
+    multiplyArgD thread_args[NTHREADS];
+    doubleMatrix rows[NTHREADS];
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        MatrixError e = matrixNullD(&rows[y], a->width, 1);
+        if (e != SUCCESS)
+            return e;
+
+        e = getRowD(&rows[y], a, y);
+        if (e != SUCCESS){
+            destroymD(&rows[y]);
+            return e;
+        }
+        multiplyArgD arg = {.dest=dest, .tmpRow=&rows[y], .b=b, .y=y};
+
+        thread_args[y] = arg;
+        pthread_create(&threads[y], NULL, multiplyThreadD, (void *) &thread_args[y]);
+    }
+
+
+    for (y = 0; y < a->height; y++){
+        pthread_join(threads[y], NULL);
+        destroymD(&rows[y]);
+    }
+    return SUCCESS;
+}
+
+MatrixError stdMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b){
+    if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
+        return DIMENSION_ERROR;
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        doubleMatrix tmpRow;
+        MatrixError e = matrixNullD(&tmpRow, a->width, 1);
+        if (e != SUCCESS)
+            return e;
+
+        e = getRowD(&tmpRow, a, y);
+        if (e != SUCCESS){
+            destroymD(&tmpRow);
+            return e;
+        }
+
+        int x;
+        for (x = 0; x < b->width; x++){
+            doubleMatrix tmpCol;
+            e = matrixNullD(&tmpCol, 1, b->height);
+            if (e != SUCCESS)
+                return e;
+
+            e = getColD(&tmpCol, b, x);
+            if (e != SUCCESS){
+                destroymD(&tmpCol);
+                return e;
+            }
+
+            double dp = 0;
+            int i;
+            for (i = 0; i < tmpCol.height; i++){
+                dp += tmpRow.data[i] * tmpCol.data[i];
+            }
+            dest->data[y*dest->width + x] = dp;
+            destroymD(&tmpCol);
+        }
+        destroymD(&tmpRow);
+    }
+    return SUCCESS;
+}
+
+MatrixError multiplyF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b){
+    int size = a->width > a->height ? a->width : a->height;
+    if (size > 10 && size <= NTHREADS){
+        return paraMultiplyF(dest, a, b);
+    } else {
+        return stdMultiplyF(dest, a, b);
+    }
+}
+
+void * multiplyThreadF(void * arg){
+    int x;
+    for (x = 0; x < ((multiplyArgF*)arg)->b->width; x++){
+        floatMatrix tmpCol;
+        MatrixError e = matrixNullF(&tmpCol, 1, ((multiplyArgF*)arg)->b->height);
+        if (e != SUCCESS)
+            return NULL;
+        e = getColF(&tmpCol, ((multiplyArgF*)arg)->b, x);
+        if (e != SUCCESS){
+            destroymF(&tmpCol);
+            return NULL;
+        }
+        float dp = 0;
+        int i;
+        for (i = 0; i < tmpCol.height; i++){
+            dp += ((multiplyArgF*)arg)->tmpRow->data[i] * tmpCol.data[i];
+        }
+        ((multiplyArgF*)arg)->dest->data[(((multiplyArgF*)arg)->y)*(((multiplyArgF*)arg)->dest->width) + x] = dp;
+        destroymF(&tmpCol);
+    }
+    return NULL;
+}
+
+MatrixError paraMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b){
+    if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
+        return DIMENSION_ERROR;
+
+    pthread_t threads[NTHREADS];
+    multiplyArgF thread_args[NTHREADS];
+    floatMatrix rows[NTHREADS];
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        MatrixError e = matrixNullF(&rows[y], a->width, 1);
+        if (e != SUCCESS)
+            return e;
+
+        e = getRowF(&rows[y], a, y);
+        if (e != SUCCESS){
+            destroymF(&rows[y]);
+            return e;
+        }
+        multiplyArgF arg = {.dest=dest, .tmpRow=&rows[y], .b=b, .y=y};
+
+        thread_args[y] = arg;
+        pthread_create(&threads[y], NULL, multiplyThreadF, (void *) &thread_args[y]);
+    }
+
+
+    for (y = 0; y < a->height; y++){
+        pthread_join(threads[y], NULL);
+        destroymF(&rows[y]);
+    }
+    return SUCCESS;
+}
+
+MatrixError stdMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b){
+    if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
+        return DIMENSION_ERROR;
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        floatMatrix tmpRow;
+        MatrixError e = matrixNullF(&tmpRow, a->width, 1);
+        if (e != SUCCESS)
+            return e;
+
+        e = getRowF(&tmpRow, a, y);
+        if (e != SUCCESS){
+            destroymF(&tmpRow);
+            return e;
+        }
+
+        int x;
+        for (x = 0; x < b->width; x++)
+        {
+            floatMatrix tmpCol;
+            e = matrixNullF(&tmpCol, 1, b->height);
+            if (e != SUCCESS)
+                return e;
+
+            e = getColF(&tmpCol, b, x);
+            if (e != SUCCESS){
+                destroymF(&tmpCol);
+                return e;
+            }
+
+            float dp = 0;
+            int i;
+            for (i = 0; i < tmpCol.height; i++){
+                dp += tmpRow.data[i] * tmpCol.data[i];
+            }
+            dest->data[y*dest->width + x] = dp;
+            destroymF(&tmpCol);
+        }
+        destroymF(&tmpRow);
+    }
+    return SUCCESS;
+}
+
+MatrixError multiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b){
+    int size = a->width > a->height ? a->width : a->height;
+    if (size > 10 && size <= NTHREADS){
+        return paraMultiplyI(dest, a, b);
+    } else {
+        return stdMultiplyI(dest, a, b);
+    }
+}
+
+void * multiplyThreadI(void * arg){
+
+    int x;
+    for (x = 0; x < ((multiplyArgI*)arg)->b->width; x++){
+        intMatrix tmpCol;
+        MatrixError e = matrixNullI(&tmpCol, 1, ((multiplyArgI*)arg)->b->height);
+        if (e != SUCCESS)
+            return NULL;
+        e = getColI(&tmpCol, ((multiplyArgI*)arg)->b, x);
+        if (e != SUCCESS){
+            destroymI(&tmpCol);
+            return NULL;
+        }
+        int dp = 0;
+        int i;
+        for (i = 0; i < tmpCol.height; i++){
+            dp += ((multiplyArgI*)arg)->tmpRow->data[i] * tmpCol.data[i];
+        }
+        ((multiplyArgI*)arg)->dest->data[(((multiplyArgI*)arg)->y)*(((multiplyArgI*)arg)->dest->width) + x] = dp;
+        destroymI(&tmpCol);
+    }
+    return NULL;
+}
+
+MatrixError paraMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b){
+    if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
+        return DIMENSION_ERROR;
+
+    pthread_t threads[NTHREADS];
+    multiplyArgI thread_args[NTHREADS];
+    intMatrix rows[NTHREADS];
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        MatrixError e = matrixNullI(&rows[y], a->width, 1);
+        if (e != SUCCESS)
+            return e;
+
+        e = getRowI(&rows[y], a, y);
+        if (e != SUCCESS){
+            destroymI(&rows[y]);
+            return e;
+        }
+        multiplyArgI arg = {.dest=dest, .tmpRow=&rows[y], .b=b, .y=y};
+
+        thread_args[y] = arg;
+        pthread_create(&threads[y], NULL, multiplyThreadI, (void *) &thread_args[y]);
+    }
+
+
+    for (y = 0; y < a->height; y++){
+        pthread_join(threads[y], NULL);
+        destroymI(&rows[y]);
+    }
+    return SUCCESS;
+}
+
+MatrixError stdMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b){
+    if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != b->width)
+        return DIMENSION_ERROR;
+
+    int y;
+    for (y = 0; y < a->height; y++){
+        intMatrix tmpRow;
+        MatrixError e = matrixNullI(&tmpRow, a->width, 1);
+        if (e != SUCCESS)
+            return e;
+
+        e = getRowI(&tmpRow, a, y);
+        if (e != SUCCESS){
+            destroymI(&tmpRow);
+            return e;
+        }
+
+        int x;
+        for (x = 0; x < b->width; x++)
+        {
+            intMatrix tmpCol;
+            e = matrixNullI(&tmpCol, 1, b->height);
+            if (e != SUCCESS)
+                return e;
+
+            e = getColI(&tmpCol, b, x);
+            if (e != SUCCESS){
+                destroymI(&tmpCol);
+                return e;
+            }
+
+            int dp = 0;
+            int i;
+            for (i = 0; i < tmpCol.height; i++){
+                dp += tmpRow.data[i] * tmpCol.data[i];
+            }
+            dest->data[y*dest->width + x] = dp;
+            destroymI(&tmpCol);
+        }
+        destroymI(&tmpRow);
+    }
+    return SUCCESS;
 }

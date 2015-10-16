@@ -6,6 +6,7 @@ Written by Andrew M. Hall
 #include <string.h>
 #include <stdlib.h>
 #include "matrix.h"
+#include "matrixError.h"
 
 #define NUM_ARGS 4
 
@@ -41,14 +42,14 @@ int main(int argc, char* argv[]){
         //Deal with --help flag being the
         if (i+1 == argc && strcmp(argv[i], arguments[HELP].shortCode) && strcmp(argv[i], arguments[HELP].longCode)){
             printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return 0;
+            return EXIT_FAILURE;
         }
         int a;
         for (a = 0; a < NUM_ARGS; a++){
             if (!strcmp(argv[i], arguments[a].longCode) || !strcmp(argv[i], arguments[a].shortCode)){
                 if (arguments[a].code == HELP){
-                    printf("%s\n", helpMessage);
-                    return 0;
+                    puts(helpMessage);
+                    return EXIT_SUCCESS;
                 }
                 arguments[a].value = argv[i+1];
             }
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]){
 
     for (i = 0; i < NUM_ARGS; i++){
         if (arguments[i].value == NULL && arguments[i].mandatory){
-            printf("Must have at least:");
+            puts("Must have at least:");
             int a;
             for (a = 0; a < NUM_ARGS; a++){
                 if (arguments[a].mandatory){
@@ -65,7 +66,7 @@ int main(int argc, char* argv[]){
                 }
             }
             printf("\n\t or use the -h or --help flag to display help\n%s\n", helpMessage);
-            return 0;
+            return EXIT_FAILURE;
         }
     }
 
@@ -75,24 +76,25 @@ int main(int argc, char* argv[]){
     dim = atoi(arguments[DIMENSION].value);
     if (!dim){
         printf("%s is not a valid dimension, dimension must be an integer\n", arguments[DIMENSION].value);
-        return 0;
+        return EXIT_FAILURE;
     }
     if (dim <= 1){
-        printf("The dimension must be greater than 1\n");
-        return 0;
+        puts(getErrorMessage(DIMENSION_ERROR));
+        return EXIT_FAILURE;
     }
 
     FILE * fp = fopen(arguments[INPUT].value, "r");
     if (!fp){
+        puts(getErrorMessage(FILE_IO_ERROR));
         printf("could not open file: %s\n", arguments[INPUT].value);
-        return 0;
+        return EXIT_FAILURE;
     }
 
     double * data = (double*)malloc(dim*dim*sizeof(double));
 
     if (!data){
-        printf("failed to allocate dynamic memory of %lu bytes", dim*dim*sizeof(double));
-        return 0;
+        puts(getErrorMessage(MEM_ALLOCATION_FAILURE));
+        return EXIT_FAILURE;
     }
 
     float num;
@@ -104,9 +106,11 @@ int main(int argc, char* argv[]){
     fclose(fp);
 
     doubleMatrix m;
-    if (!matrixD(&m, data, dim, dim)){
-        printf("Failed to create matrix of dimensions %dx%d\n", dim, dim);
-        return 0;
+    MatrixError e = matrixD(&m, data, dim, dim);
+    if (e != SUCCESS){
+        puts(getErrorMessage(e));
+        free(data);
+        return EXIT_FAILURE;
     }
 
     free(data);
@@ -114,47 +118,71 @@ int main(int argc, char* argv[]){
     if (arguments[OUTPUT].value){
         FILE * out = fopen(arguments[OUTPUT].value, "w");
         if (!out){
+            puts(getErrorMessage(FILE_IO_ERROR));
             printf("Failed to create file %s\n", arguments[OUTPUT].value);
-            return 0;
+            destroymD(&m);
+            return EXIT_FAILURE;
         }
         doubleMatrix inv;
-        if (!matrixNullD(&inv, dim, dim)){
-            printf("Failed to create matrix of dimensions %dx%d\n", dim, dim);
-            return 0;
+        e = matrixNullD(&inv, dim, dim);
+        if (e != SUCCESS){
+            puts(getErrorMessage(e));
+            destroymD(&m);
+            return EXIT_FAILURE;
         }
-        if (!invertD(&inv, &m)){
-            printf("Could not invert matrix\n");
-            return 0;
+        e = invertD(&inv, &m);
+        if (e != SUCCESS){
+            puts(getErrorMessage(e));
+            destroymD(&m);
+            destroymD(&inv);
+            return EXIT_FAILURE;
         }
 
         char * strBuff = (char*)malloc(dim*dim*20*sizeof(char)+1);
-        if (!toStringD(strBuff, &inv, dim*dim*29+1)){
-            printf("Failed to represent matrix as string\n");
-            return 0;
+        strBuff[0] = '\0';
+        e = toStringD(strBuff, &inv, dim*dim*20+1);
+        if (e != SUCCESS){
+            puts(getErrorMessage(e));
+            free(strBuff);
+            destroymD(&inv);
+            destroymD(&m);
+            return EXIT_FAILURE;
         }
+
         fprintf(out, "%s", strBuff);
         free(strBuff);
         destroymD(&inv);
     } else {
         doubleMatrix inv;
-        if (!matrixNullD(&inv, dim, dim)){
-            printf("Failed to create matrix of dimensions %dx%d\n", dim, dim);
-            return 0;
+        e = matrixNullD(&inv, dim, dim);
+        if (e != SUCCESS){
+            puts(getErrorMessage(e));
+            destroymD(&m);
+            return EXIT_FAILURE;
         }
 
-        if (!invertD(&inv, &m)){
-            printf("Could not invert matrix\n");
-            return 0;
+        e = invertD(&inv, &m);
+        if (e != SUCCESS){
+            puts(getErrorMessage(e));
+            destroymD(&inv);
+            destroymD(&m);
+            return EXIT_FAILURE;
         }
 
         fflush(stdout);
 
-        printmD(&inv);
+        e = printmD(&inv);
+        if (e != SUCCESS){
+            printf("\n%s", getErrorMessage(e));
+            destroymD(&inv);
+            destroymD(&m);
+            return EXIT_FAILURE;
+        }
         destroymD(&inv);
     }
 
     destroymD(&m);
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void getHelpMessage(char * dest){
@@ -183,4 +211,5 @@ void getHelpMessage(char * dest){
         strcat(dest, arguments[i].description);
         strcat(dest, "\n\t");
     }
+    strcat(dest, "\n");
 }
