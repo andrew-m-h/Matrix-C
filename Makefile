@@ -1,6 +1,6 @@
 matrix-invert-c:
-	gcc -Wall -s  -O2 -fexceptions -O2 -pthread -I. -o invert-matrix main.c matrix.c
-	strip invert-matrix
+	gcc -Wall -s  -O3 -fexceptions -O2 -pthread -I. -o matrix main.c matrix.c matrixError.c
+	strip matrix
 
 check-syntax:
 	gcc -o -Wall -S ${CHK_SOURCES}
