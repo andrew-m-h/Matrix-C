@@ -10,7 +10,8 @@ Created by Andrew M. Hall
 
 #define NUM_ERRORS 7
 
-typedef enum{
+typedef enum
+{
     SUCCESS = 0,
     MEM_ALLOCATION_FAILURE,
     MATH_ERROR,

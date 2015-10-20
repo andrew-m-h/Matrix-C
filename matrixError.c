@@ -4,7 +4,8 @@ Created by Andrew M. Hall
 
 #include "matrixError.h"
 
-const char* errors[NUM_ERRORS] = {
+const char* errors[NUM_ERRORS] =
+{
     "Matrix Operation Success\n",
     "Failed to allocate sufficient memory to perform matrix operation\n",
     "Math error occurred when performing matrix operation\n\tLikely Cause: Take inverse of matrix with determinant of 0\n",
@@ -14,8 +15,10 @@ const char* errors[NUM_ERRORS] = {
     "General Matrix Failure occurred\n"
 };
 
-const char* getErrorMessage(MatrixError e){
-    if (e >= NUM_ERRORS || e < 0){
+const char* getErrorMessage(MatrixError e)
+{
+    if (e >= NUM_ERRORS || e < 0)
+    {
         puts("Could not get error message for provided error code\n");
         return NULL;
     }
