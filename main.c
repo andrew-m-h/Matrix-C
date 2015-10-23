@@ -14,7 +14,7 @@ Multiply:
 #include <string.h>
 #include <stdlib.h>
 #include "matrix.h"
-#include "matrixError.h"
+#include "matrix-test.h"
 
 #define HELP_BUFF_LENGTH 10000
 
@@ -58,6 +58,8 @@ int multiply(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
 {
+    puts("Testing:");
+    printf("Number of tests passed: %d\n\n", matrix_suite());
     //The aforementioned generated help message
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, NONE);
@@ -288,7 +290,7 @@ int invert(int argc, char* argv[])
     fclose(fp);
 
     //The matrix, m, which shall hold the input data
-    doubleMatrix m;
+    doubleMatrix m = DEFAULT_MATRIX;
     MatrixError e = matrixD(&m, data, dim, dim);
     if (e != SUCCESS)
     {
@@ -334,7 +336,7 @@ int invert(int argc, char* argv[])
         }
 
         //inv will hold the inverted matrix.
-        doubleMatrix inv;
+        doubleMatrix inv = DEFAULT_MATRIX;
         /*The matrix library uses the matrixNullD function to create nxm matrices filled with 0's
         It is however beholden on the programmer, to take care of the returned matrix errors*/
         e = matrixNullD(&inv, dim, dim);
@@ -383,7 +385,7 @@ int invert(int argc, char* argv[])
     else
     {
         //create the inv matrix
-        doubleMatrix inv;
+        doubleMatrix inv = DEFAULT_MATRIX;
         e = matrixNullD(&inv, dim, dim);
         if (e != SUCCESS)
         {
@@ -541,7 +543,7 @@ int transpose(int argc, char* argv[])
     fclose(fp);
 
     //The matrix which will hold the input data
-    doubleMatrix m;
+    doubleMatrix m = DEFAULT_MATRIX;
     MatrixError e = matrixD(&m, data, width, height);
     if (e != SUCCESS)
     {
@@ -713,7 +715,7 @@ int multiply(int argc, char* argv[])
     fclose(fp1);
     fclose(fp2);
 
-    doubleMatrix m1;
+    doubleMatrix m1 = DEFAULT_MATRIX;
     MatrixError e = matrixD(&m1, data1, width, height);
     if (e != SUCCESS)
     {
@@ -723,7 +725,7 @@ int multiply(int argc, char* argv[])
     }
     free(data1);
 
-    doubleMatrix m2;
+    doubleMatrix m2 = DEFAULT_MATRIX;
     e = matrixD(&m2, data2, height, width);
     if (e != SUCCESS)
     {
@@ -763,7 +765,7 @@ int multiply(int argc, char* argv[])
             destroymD(&m2);
             return EXIT_FAILURE;
         }
-        doubleMatrix mult;
+        doubleMatrix mult = DEFAULT_MATRIX;
         e = matrixNullD(&mult, height, height);
         if (e != SUCCESS)
         {
@@ -810,7 +812,7 @@ int multiply(int argc, char* argv[])
     }
     else
     {
-        doubleMatrix mult;
+        doubleMatrix mult = DEFAULT_MATRIX;
         e = matrixNullD(&mult, height, height);
         if (e != SUCCESS)
         {

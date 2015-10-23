@@ -11,6 +11,7 @@ allows the inverse of a 11x11 matrix to be calculated in reasonable time.
 #include <stdlib.h>
 #include "matrixError.h"
 
+#define DEFAULT_MATRIX {NULL, 0, 0}
 #define NTHREADS 40
 
 //Basic Matrix data types. Matrices are implemented on top of a 1D dynamically allocated array.
@@ -43,14 +44,18 @@ typedef int BOOL;
 #define FALSE 0
 
 //Matrix constructors
-MatrixError matrixD(doubleMatrix * dest, double * in_data, int in_width, int in_height);
-MatrixError matrixF(floatMatrix * dest, float * in_data, int in_width, int in_height);
-MatrixError matrixI(intMatrix * dest, int * in_data, int in_width, int in_height);
+MatrixError matrixD(doubleMatrix * dest, const double * in_data, int in_width, int in_height);
+MatrixError matrixF(floatMatrix * dest, const float * in_data, int in_width, int in_height);
+MatrixError matrixI(intMatrix * dest, const int * in_data, int in_width, int in_height);
 
 //null Matrix constructors, fills matrix with 0's
 MatrixError matrixNullD(doubleMatrix * dest, int in_width, int in_height);
 MatrixError matrixNullF(floatMatrix * dest, int in_width, int in_height);
 MatrixError matrixNullI(intMatrix * dest, int in_width, int in_height);
+
+MatrixError matrixCopyConsD(doubleMatrix * dest, const doubleMatrix * src);
+MatrixError matrixCopyConsF(floatMatrix * dest, const floatMatrix * src);
+MatrixError matrixCopyConsI(intMatrix * dest, const intMatrix * src);
 
 //matrix destructor, necessary since dynamic memory is used
 void destroymD(doubleMatrix * a);
@@ -73,7 +78,7 @@ float determinantF(const floatMatrix *a, int row);
 int determinantI(const intMatrix *a, int row);
 
 //calculate the determinant of a 2x3 matrix, this is the base case for the determinant calculation
-double determinant2x2(const doubleMatrix *a);
+double determinant2x2D(const doubleMatrix *a);
 float determinant2x2F(const floatMatrix *a);
 int determinant2x2I(const intMatrix *a);
 
@@ -100,7 +105,7 @@ MatrixError stdCofactorF(floatMatrix * dest, const floatMatrix *a);
 MatrixError stdCofactorI(intMatrix * dest, const intMatrix *a);
 
 //This cofactor function, dispatches a call to either stdcofactor or paracofactor based on the matrix size
-MatrixError CofactorD(doubleMatrix * dest, const doubleMatrix *a);
+MatrixError cofactorD(doubleMatrix * dest, const doubleMatrix *a);
 MatrixError cofactorF(floatMatrix * dest, const floatMatrix *a);
 MatrixError cofactorI(intMatrix * dest, const intMatrix *a);
 
@@ -184,6 +189,11 @@ MatrixError toStringI(char* dest, const intMatrix *a, size_t buffSize);
 double atD(const doubleMatrix* a, int x, int y);
 float atF(const floatMatrix* a, int x, int y);
 int atI(const intMatrix* a, int x, int y);
+
+//Insert element into matrix
+MatrixError insertAtD(doubleMatrix* a, double val, int x, int y);
+MatrixError insertAtF(floatMatrix* a, float val, int x, int y);
+MatrixError insertAtI(intMatrix* a, int val, int x, int y);
 
 //Get the x'th column of a matrix.
 MatrixError getColD(doubleMatrix *dest, const doubleMatrix *a, int x);
