@@ -4,7 +4,7 @@ Created by Andrew M. Hall
 
 #include "matrixError.h"
 
-const char* errors[NUM_ERRORS] =
+const char errors[NUM_ERRORS][200] =
 {
     "Matrix Operation Success\n",
     "Failed to allocate sufficient memory to perform matrix operation\n",
@@ -15,7 +15,13 @@ const char* errors[NUM_ERRORS] =
     "General Matrix Failure occurred\n"
 };
 
-const char* getErrorMessage(MatrixError e)
+MatrixError getError(const MatrixErrorCode e, const char* file, const int line, const char* func)
+{
+    const MatrixError err = {.code=e, .file=file, .line=line, .func=func, .message=getErrorMessage(e)};
+    return err;
+}
+
+const char* getErrorMessage(MatrixErrorCode e)
 {
     if (e >= NUM_ERRORS || e < 0)
     {
@@ -24,3 +30,8 @@ const char* getErrorMessage(MatrixError e)
     }
     return errors[e];
 }
+
+void printError(const MatrixError e){
+    printf("Matrix Error occurred:\n\tfile: %s\n\tline: %d\n\tfunction: %s\n\t%s", e.file, e.line, e.func, e.message);
+}
+

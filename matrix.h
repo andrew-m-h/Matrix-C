@@ -23,7 +23,7 @@ typedef struct
     int height;
 } doubleMatrix;
 
-typedef struct
+typedef struct C
 {
     float* data;
     int width;
@@ -128,7 +128,6 @@ MatrixError invertI(doubleMatrix * dest, const intMatrix *a);
 MatrixError stdInvertD(doubleMatrix * dest, const doubleMatrix *a);
 MatrixError stdInvertF(doubleMatrix * dest, const floatMatrix *a);
 MatrixError stdInvertI(doubleMatrix * dest, const intMatrix *a);
-
 
 //add two matrices of the same dimension together
 MatrixError addD(doubleMatrix *a, const doubleMatrix *b);

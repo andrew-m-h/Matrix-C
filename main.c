@@ -48,18 +48,18 @@ typedef enum
     NONE=0,
     INVERT,
     TRANSPOSE,
-    MULTIPLY
+    MULTIPLY,
+    TEST
 } TOOL;
 
 void getHelpMessage(char * dest, TOOL tool);
 int invert(int argc, char* argv[]);
 int transpose(int argc, char* argv[]);
 int multiply(int argc, char* argv[]);
+int test(int argc);
 
 int main(int argc, char* argv[])
 {
-    puts("Testing:");
-    printf("Number of tests passed: %d\n\n", matrix_suite());
     //The aforementioned generated help message
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, NONE);
@@ -87,6 +87,10 @@ int main(int argc, char* argv[])
             {
                 return multiply(argc, argv);
             }
+            else if(!strcmp(argv[i+1], "test"))
+            {
+                return test(argc);
+            }
             else
             {
                 puts("--mode must be accompanied by a valid mode\n");
@@ -97,8 +101,10 @@ int main(int argc, char* argv[])
     }
 
     //If only the --help flag is given, then provide help for all tools
-    for (i = 0; i < argc; i++){
-        if (!strcmp(argv[i], HELP_CODE_LONG) || !strcmp(argv[i], HELP_CODE_SHORT)){
+    for (i = 0; i < argc; i++)
+    {
+        if (!strcmp(argv[i], HELP_CODE_LONG) || !strcmp(argv[i], HELP_CODE_SHORT))
+        {
             puts(helpMessage);
             return EXIT_SUCCESS;
         }
@@ -115,6 +121,7 @@ enum
     I_OUTPUT,
     I_PARALLEL,
     I_HELP,
+    I_TEST
 };
 
 enum
@@ -124,6 +131,7 @@ enum
     T_INPUT,
     T_OUTPUT,
     T_HELP,
+    T_TEST
 };
 
 enum
@@ -134,7 +142,8 @@ enum
     M_INPUT_TWO,
     M_OUTPUT,
     M_PARALLEL,
-    M_HELP
+    M_HELP,
+    M_TEST
 };
 
 //The argument struct, used to store information about each argument.
@@ -163,8 +172,8 @@ Argument argumentsTranspose[NUM_ARGS_TRANSPOSE] =
     {.longCode="--width", .shortCode="-x", .description="The width, x, of the input x by y matrix", .code=T_WIDTH, .mandatory=TRUE, .value=NULL},
     {.longCode="--height", .shortCode="-y", .description="The height, y, of the input x by y matrix", .code=T_HEIGHT, .mandatory=TRUE, .value=NULL},
     {.longCode="--input", .shortCode="-i", .description="The name of the input file that contains the matrix to be transposed", .code=T_INPUT, .mandatory=TRUE, .value=NULL},
-    {.longCode="--output", .shortCode="-o", .description="The name of a file, which the transposed matrix will be written to", .code=T_OUTPUT, .mandatory=FALSE, .value=NULL},
-    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=T_HELP, .mandatory=FALSE, .value=NULL},
+    {.longCode="--output", .shortCode="-o", .description="The name of a file, which the transposed matrix will be written to", .code=T_OUTPUT, .mandatory=FALSE, .value=FALSE},
+    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=T_HELP, .mandatory=FALSE, .value=NULL}
 };
 
 Argument argumentsMultiply[NUM_ARGS_MULTIPLY] =
@@ -175,7 +184,7 @@ Argument argumentsMultiply[NUM_ARGS_MULTIPLY] =
     {.longCode="--input-two", .shortCode="-i2", .description="The name of the second input file that contains the matrix to be multiplied by the first matrix", .code=M_INPUT_TWO, .mandatory=TRUE, .value=NULL},
     {.longCode="--output", .shortCode="-o", .description="The name of a file, which the resulting matrix will be written to", .code=M_OUTPUT, .mandatory=FALSE, .value=NULL},
     {.longCode="--parallel", .shortCode="-p", .description="Control if program runs in parallel", .code=M_PARALLEL, .mandatory=FALSE, .value=NULL},
-    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=M_HELP, .mandatory=FALSE, .value=NULL},
+    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=M_HELP, .mandatory=FALSE, .value=NULL}
 };
 
 //Invert tool
@@ -216,7 +225,9 @@ int invert(int argc, char* argv[])
                 }
                 argumentsInvert[a].value = argv[i+1];
                 break;
-            } else if (a == NUM_ARGS_TRANSPOSE - 1){
+            }
+            else if (a == NUM_ARGS_TRANSPOSE - 1)
+            {
                 /*If an invalid flag is passed to a tool, the program should print out a help message,
                 and exit in error*/
                 printf("Invert does not accept the argument: %s\n", argv[i]);
@@ -257,7 +268,7 @@ int invert(int argc, char* argv[])
     }
     if (dim <= 1)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
         return EXIT_FAILURE;
     }
 
@@ -265,7 +276,7 @@ int invert(int argc, char* argv[])
     FILE * fp = fopen(argumentsInvert[I_INPUT].value, "r");
     if (!fp)
     {
-        puts(getErrorMessage(FILE_IO_ERROR));
+        PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsInvert[I_INPUT].value);
         return EXIT_FAILURE;
     }
@@ -275,7 +286,7 @@ int invert(int argc, char* argv[])
 
     if (!data)
     {
-        puts(getErrorMessage(MEM_ALLOCATION_FAILURE));
+        PRINT_ERROR_CODE(MEM_ALLOCATION_FAILURE);
         return EXIT_FAILURE;
     }
 
@@ -292,9 +303,9 @@ int invert(int argc, char* argv[])
     //The matrix, m, which shall hold the input data
     doubleMatrix m = DEFAULT_MATRIX;
     MatrixError e = matrixD(&m, data, dim, dim);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
     {
-        puts(getErrorMessage(e));
+        printError(e);
         free(data);
         return EXIT_FAILURE;
     }
@@ -329,7 +340,7 @@ int invert(int argc, char* argv[])
         FILE * out = fopen(argumentsInvert[I_OUTPUT].value, "w");
         if (!out)
         {
-            puts(getErrorMessage(FILE_IO_ERROR));
+            PRINT_ERROR_CODE(FILE_IO_ERROR);
             printf("Failed to create file %s\n", argumentsInvert[I_OUTPUT].value);
             destroymD(&m);
             return EXIT_FAILURE;
@@ -340,9 +351,9 @@ int invert(int argc, char* argv[])
         /*The matrix library uses the matrixNullD function to create nxm matrices filled with 0's
         It is however beholden on the programmer, to take care of the returned matrix errors*/
         e = matrixNullD(&inv, dim, dim);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&m);
             return EXIT_FAILURE;
         }
@@ -356,9 +367,9 @@ int invert(int argc, char* argv[])
             e = stdInvertD(&inv, &m); //stdInvertD cannot use posix threads
         }
 
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&m);
             destroymD(&inv);
             return EXIT_FAILURE;
@@ -368,9 +379,9 @@ int invert(int argc, char* argv[])
         char * strBuff = (char*)malloc(dim*dim*20*sizeof(char)+1);
         strBuff[0] = '\0';
         e = toStringD(strBuff, &inv, dim*dim*20+1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             free(strBuff);
             destroymD(&inv);
             destroymD(&m);
@@ -387,9 +398,9 @@ int invert(int argc, char* argv[])
         //create the inv matrix
         doubleMatrix inv = DEFAULT_MATRIX;
         e = matrixNullD(&inv, dim, dim);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&m);
             return EXIT_FAILURE;
         }
@@ -404,9 +415,9 @@ int invert(int argc, char* argv[])
             e = stdInvertD(&inv, &m);
         }
 
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&inv);
             destroymD(&m);
             return EXIT_FAILURE;
@@ -416,9 +427,9 @@ int invert(int argc, char* argv[])
 
         //matrix.h exports a printmD function, which takes care of printing a matrix to stdout
         e = printmD(&inv);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            printf("\n%s", getErrorMessage(e));
+            printf("\n%s", e.message);
             destroymD(&inv);
             destroymD(&m);
             return EXIT_FAILURE;
@@ -464,7 +475,9 @@ int transpose(int argc, char* argv[])
                 }
                 argumentsTranspose[a].value = argv[i+1];
                 break;
-            } else if (a == NUM_ARGS_TRANSPOSE - 1){
+            }
+            else if (a == NUM_ARGS_TRANSPOSE - 1)
+            {
                 //Deal with invalid argument being passed
                 printf("Transpose does not accept the argument: %s\n", argv[i]);
                 puts(helpMessage);
@@ -510,7 +523,7 @@ int transpose(int argc, char* argv[])
 
     if (width < 1 || height < 1)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
         return EXIT_FAILURE;
     }
 
@@ -518,7 +531,7 @@ int transpose(int argc, char* argv[])
     FILE * fp = fopen(argumentsTranspose[T_INPUT].value, "r");
     if (!fp)
     {
-        puts(getErrorMessage(FILE_IO_ERROR));
+        PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsTranspose[T_INPUT].value);
         return EXIT_FAILURE;
     }
@@ -528,7 +541,7 @@ int transpose(int argc, char* argv[])
 
     if (!data)
     {
-        puts(getErrorMessage(MEM_ALLOCATION_FAILURE));
+        PRINT_ERROR_CODE(MEM_ALLOCATION_FAILURE);
         return EXIT_FAILURE;
     }
 
@@ -545,9 +558,9 @@ int transpose(int argc, char* argv[])
     //The matrix which will hold the input data
     doubleMatrix m = DEFAULT_MATRIX;
     MatrixError e = matrixD(&m, data, width, height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
     {
-        puts(getErrorMessage(e));
+        printError(e);
         free(data);
         return EXIT_FAILURE;
     }
@@ -560,7 +573,7 @@ int transpose(int argc, char* argv[])
         FILE * out = fopen(argumentsTranspose[T_OUTPUT].value, "w");
         if (!out)
         {
-            puts(getErrorMessage(FILE_IO_ERROR));
+            PRINT_ERROR_CODE(FILE_IO_ERROR);
             printf("Failed to create file %s\n", argumentsTranspose[T_OUTPUT].value);
             destroymD(&m);
             return EXIT_FAILURE;
@@ -573,9 +586,9 @@ int transpose(int argc, char* argv[])
         char * strBuff = (char*)malloc(width*height*20*sizeof(char)+1);
         strBuff[0] = '\0';
         e = toStringD(strBuff, &m, width*height*20+1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             free(strBuff);
             destroymD(&m);
             return EXIT_FAILURE;
@@ -592,9 +605,9 @@ int transpose(int argc, char* argv[])
         fflush(stdout);
 
         e = printmD(&m);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            printf("\n%s", getErrorMessage(e));
+            printf("\n%s", e.message);
             destroymD(&m);
             return EXIT_FAILURE;
         }
@@ -618,7 +631,8 @@ int multiply(int argc, char* argv[])
             continue;
         }
         //Deal with --help flag being the last argument
-        if (i+1 == argc && strcmp(argv[i], argumentsMultiply[M_HELP].shortCode) && strcmp(argv[i], argumentsMultiply[M_HELP].longCode)){
+        if (i+1 == argc && strcmp(argv[i], argumentsMultiply[M_HELP].shortCode) && strcmp(argv[i], argumentsMultiply[M_HELP].longCode))
+        {
             printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
             return EXIT_FAILURE;
         }
@@ -634,7 +648,9 @@ int multiply(int argc, char* argv[])
                 }
                 argumentsMultiply[a].value = argv[i+1];
                 break;
-            } else if (a == NUM_ARGS_TRANSPOSE - 1){
+            }
+            else if (a == NUM_ARGS_TRANSPOSE - 1)
+            {
                 printf("Invert does not accept the argument: %s\n", argv[i]);
                 puts(helpMessage);
                 return EXIT_FAILURE;
@@ -669,14 +685,16 @@ int multiply(int argc, char* argv[])
     {
         printf("%s is not a valid width, width must be an integer\n", argumentsMultiply[M_WIDTH].value);
         return EXIT_FAILURE;
-    } else if (!height){
+    }
+    else if (!height)
+    {
         printf("%s is not a valid height, height must be an integer\n", argumentsMultiply[M_HEIGHT].value);
         return EXIT_FAILURE;
     }
 
     if (width < 1 || height < 1)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
         return EXIT_FAILURE;
     }
 
@@ -684,13 +702,13 @@ int multiply(int argc, char* argv[])
     FILE * fp2 = fopen(argumentsMultiply[M_INPUT_TWO].value, "r");
     if (!fp1)
     {
-        puts(getErrorMessage(FILE_IO_ERROR));
+        PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsMultiply[M_INPUT_ONE].value);
         return EXIT_FAILURE;
     }
     if (!fp2)
     {
-        puts(getErrorMessage(FILE_IO_ERROR));
+        PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsMultiply[M_INPUT_TWO].value);
         return EXIT_FAILURE;
     }
@@ -700,7 +718,7 @@ int multiply(int argc, char* argv[])
 
     if (!data1 || !data2)
     {
-        puts(getErrorMessage(MEM_ALLOCATION_FAILURE));
+        PRINT_ERROR_CODE(MEM_ALLOCATION_FAILURE);
         return EXIT_FAILURE;
     }
 
@@ -717,9 +735,9 @@ int multiply(int argc, char* argv[])
 
     doubleMatrix m1 = DEFAULT_MATRIX;
     MatrixError e = matrixD(&m1, data1, width, height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
     {
-        puts(getErrorMessage(e));
+        printError(e);
         free(data1);
         return EXIT_FAILURE;
     }
@@ -727,9 +745,9 @@ int multiply(int argc, char* argv[])
 
     doubleMatrix m2 = DEFAULT_MATRIX;
     e = matrixD(&m2, data2, height, width);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
     {
-        puts(getErrorMessage(e));
+        printError(e);
         free(data2);
         return EXIT_FAILURE;
     }
@@ -759,7 +777,7 @@ int multiply(int argc, char* argv[])
         FILE * out = fopen(argumentsMultiply[M_OUTPUT].value, "w");
         if (!out)
         {
-            puts(getErrorMessage(FILE_IO_ERROR));
+            PRINT_ERROR_CODE(FILE_IO_ERROR);
             printf("Failed to create file %s\n", argumentsMultiply[M_OUTPUT].value);
             destroymD(&m1);
             destroymD(&m2);
@@ -767,9 +785,9 @@ int multiply(int argc, char* argv[])
         }
         doubleMatrix mult = DEFAULT_MATRIX;
         e = matrixNullD(&mult, height, height);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&m1);
             destroymD(&m2);
             return EXIT_FAILURE;
@@ -784,9 +802,9 @@ int multiply(int argc, char* argv[])
             e = stdMultiplyD(&mult, &m1, &m2);
         }
 
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&m1);
             destroymD(&m2);
             destroymD(&mult);
@@ -796,9 +814,9 @@ int multiply(int argc, char* argv[])
         char * strBuff = (char*)malloc(height*height*20*sizeof(char)+1);
         strBuff[0] = '\0';
         e = toStringD(strBuff, &mult, height*height*20+1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             free(strBuff);
             destroymD(&m1);
             destroymD(&m2);
@@ -814,9 +832,9 @@ int multiply(int argc, char* argv[])
     {
         doubleMatrix mult = DEFAULT_MATRIX;
         e = matrixNullD(&mult, height, height);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&m1);
             destroymD(&m2);
             return EXIT_FAILURE;
@@ -831,9 +849,9 @@ int multiply(int argc, char* argv[])
             e = stdMultiplyD(&mult, &m1, &m2);
         }
 
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            puts(getErrorMessage(e));
+            printError(e);
             destroymD(&m1);
             destroymD(&m2);
             destroymD(&mult);
@@ -843,9 +861,9 @@ int multiply(int argc, char* argv[])
         fflush(stdout);
 
         e = printmD(&mult);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
-            printf("\n%s", getErrorMessage(e));
+            printf("\n%s", e.message);
             destroymD(&mult);
             destroymD(&m1);
             destroymD(&m2);
@@ -855,6 +873,19 @@ int multiply(int argc, char* argv[])
     }
     destroymD(&m1);
     destroymD(&m2);
+    return EXIT_SUCCESS;
+}
+
+int test(int argc)
+{
+    //test does not take any command line arguments
+    if (argc > 3)
+    {
+        puts("unit-test does not take any command line arguments\n");
+        return EXIT_FAILURE;
+    }
+    puts("Testing:");
+    printf("Tests Passed: %d of %d\n", matrix_suite(), TEST_NUMBER);
     return EXIT_SUCCESS;
 }
 
@@ -875,6 +906,8 @@ void getHelpMessage(char * dest, TOOL tool)
     case MULTIPLY :
         lim = NUM_ARGS_MULTIPLY;
         args = argumentsMultiply;
+        break;
+    case TEST :
         break;
     case NONE :
         strcat(dest, "Tool: Invert\n");
@@ -919,6 +952,8 @@ void getHelpMessage(char * dest, TOOL tool)
         strcat(dest, "   -t multiply | --tool multiply");
         strcat(dest, "\n\t");
         break;
+    case TEST :
+        return;
     case NONE :
         return;
     }

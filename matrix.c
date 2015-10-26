@@ -56,125 +56,132 @@ typedef struct
 
 MatrixError matrixD(doubleMatrix * dest, const double * in_data, int in_width, int in_height)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     double *ptr = (double*)malloc(in_height*in_width*sizeof(double));
     if (!ptr)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
 
     if (!memcpy(ptr, in_data, in_width*in_height*sizeof(double)))
-        return FAILURE;
+        return GET_ERROR(FAILURE);
 
     dest->data = ptr;
     dest->height=in_height;
     dest->width=in_width;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixF(floatMatrix * dest, const float * in_data, int in_width, int in_height)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     float *ptr = (float*)malloc(in_width*in_height*sizeof(float));
     if (!ptr)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
 
     if (!memcpy(ptr, in_data, in_width*in_height*sizeof(float)))
-        return FAILURE;
+        return GET_ERROR(FAILURE);
 
     dest->data = ptr;
     dest->height=in_height;
     dest->width=in_width;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixI(intMatrix * dest, const int * in_data, int in_width, int in_height)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     int *ptr = (int*)malloc(in_width*in_height*sizeof(int));
     if (!ptr)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
 
     if (!memcpy(ptr, in_data, in_width*in_height*sizeof(int)))
-        return FAILURE;
+        return GET_ERROR(FAILURE);
 
     dest->data = ptr;
     dest->height=in_height;
     dest->width=in_width;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixNullD(doubleMatrix * dest, int in_width, int in_height)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     double *ptr = (double*)calloc(in_width*in_height, sizeof(double));
     if (!ptr)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
 
     dest->data = ptr;
     dest->height=in_height;
     dest->width=in_width;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixNullF(floatMatrix * dest, int in_width, int in_height)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     float *ptr = (float*)calloc(in_width*in_height, sizeof(float));
     if (!ptr)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
 
     dest->data = ptr;
     dest->height=in_height;
     dest->width=in_width;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixNullI(intMatrix * dest, int in_width, int in_height)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     int *ptr = (int*)calloc(in_width*in_height, sizeof(int));
     if (!ptr)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
 
     dest->data = ptr;
     dest->height=in_height;
     dest->width=in_width;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixCopyConsD(doubleMatrix * dest, const doubleMatrix * src)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     MatrixError e;
     e = matrixNullD(dest, src->width, src->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
     e = matrixcpyD(dest, src);
     return e;
@@ -182,14 +189,15 @@ MatrixError matrixCopyConsD(doubleMatrix * dest, const doubleMatrix * src)
 
 MatrixError matrixCopyConsF(floatMatrix * dest, const floatMatrix * src)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     MatrixError e;
     e = matrixNullF(dest, src->width, src->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
     e = matrixcpyF(dest, src);
     return e;
@@ -197,14 +205,15 @@ MatrixError matrixCopyConsF(floatMatrix * dest, const floatMatrix * src)
 
 MatrixError matrixCopyConsI(intMatrix * dest, const intMatrix * src)
 {
-    if (dest->data){
+    if (dest->data)
+    {
         free(dest->data);
         dest->width = 0;
         dest->height = 0;
     }
     MatrixError e;
     e = matrixNullI(dest, src->width, src->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
     e = matrixcpyI(dest, src);
     return e;
@@ -246,31 +255,31 @@ void destroymI(intMatrix * a)
 MatrixError matrixcpyD(doubleMatrix * dest, const doubleMatrix * src)
 {
     if (dest->width != src->width || dest->height != src->height)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (!memcpy(dest->data, src->data, src->width*src->height*sizeof(double)))
-        return FAILURE;
-    return SUCCESS;
+        return GET_ERROR(FAILURE);
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixcpyF(floatMatrix * dest, const floatMatrix * src)
 {
     if (dest->width != src->width || dest->height != src->height)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (!memcpy(dest->data, src->data, src->width*src->height*sizeof(float)))
-        return FAILURE;
-    return SUCCESS;
+        return GET_ERROR(FAILURE);
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError matrixcpyI(intMatrix * dest, const intMatrix * src)
 {
     if (dest->width != src->width || dest->height != src->height)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (!memcpy(dest->data, src->data, src->width*src->height*sizeof(int)))
-        return FAILURE;
-    return SUCCESS;
+        return GET_ERROR(FAILURE);
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError printmD(const doubleMatrix *a)
@@ -279,19 +288,19 @@ MatrixError printmD(const doubleMatrix *a)
     size_t buff_length = a->width * a->height * mul + 1;
     char * strBuff = (char*)malloc(buff_length*sizeof(char));
     if (!strBuff)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
     strBuff[0] = '\0';
 
     int count = 0;
     MatrixError e = toStringD(strBuff, a, buff_length);
-    while (e != SUCCESS && count <= 10)
+    while (e.code != SUCCESS && count <= 10)
     {
         mul += 2;
         buff_length = a->width * a->height * mul + 1;
         free(strBuff);
         strBuff = (char*)calloc(buff_length, sizeof(char));
         if (!strBuff)
-            return MEM_ALLOCATION_FAILURE;
+            return GET_ERROR(MEM_ALLOCATION_FAILURE);
         count++;
         e = toStringD(strBuff, a, buff_length);
     }
@@ -304,7 +313,7 @@ MatrixError printmD(const doubleMatrix *a)
     printf("%s\n", strBuff);
     fflush(stdout);
     free(strBuff);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError printmF(const floatMatrix *a)
@@ -313,19 +322,19 @@ MatrixError printmF(const floatMatrix *a)
     size_t buff_length = a->width * a->height * mul + 1;
     char * strBuff = (char*)malloc(buff_length*sizeof(char));
     if (!strBuff)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
     strBuff[0] = '\0';
 
     int count = 0;
     MatrixError e = toStringF(strBuff, a, buff_length);
-    while (e != SUCCESS && count <= 5)
+    while (e.code != SUCCESS && count <= 5)
     {
         mul += 2;
         buff_length = a->width * a->height * mul + 1;
         free(strBuff);
         strBuff = (char*)calloc(buff_length, sizeof(char));
         if (!strBuff)
-            return MEM_ALLOCATION_FAILURE;
+            return GET_ERROR(MEM_ALLOCATION_FAILURE);
         count++;
         e = toStringF(strBuff, a, buff_length);
     }
@@ -338,7 +347,7 @@ MatrixError printmF(const floatMatrix *a)
     printf("%s\n", strBuff);
     fflush(stdout);
     free(strBuff);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError printmI(const intMatrix *a)
@@ -347,19 +356,19 @@ MatrixError printmI(const intMatrix *a)
     size_t buff_length = a->width * a->height * mul + 1;
     char * strBuff = (char*)malloc(buff_length*sizeof(char));
     if (!strBuff)
-        return MEM_ALLOCATION_FAILURE;
+        return GET_ERROR(MEM_ALLOCATION_FAILURE);
     strBuff[0] = '\0';
 
     int count = 0;
     MatrixError e = toStringI(strBuff, a, buff_length);
-    while (e != SUCCESS && count <= 5)
+    while (e.code != SUCCESS && count <= 5)
     {
         mul += 2;
         buff_length = a->width * a->height * mul + 1;
         free(strBuff);
         strBuff = (char*)malloc(buff_length*sizeof(char));
         if (!strBuff)
-            return MEM_ALLOCATION_FAILURE;
+            return GET_ERROR(MEM_ALLOCATION_FAILURE);
         strBuff[0] = '\0';
 
         count++;
@@ -374,7 +383,7 @@ MatrixError printmI(const intMatrix *a)
     printf("%s\n", strBuff);
     fflush(stdout);
     free(strBuff);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 double atD(const doubleMatrix* a, int x, int y)
@@ -392,31 +401,34 @@ int atI(const intMatrix* a, int x, int y)
     return a->data[y * a->width + x];
 }
 
-MatrixError insertAtD(doubleMatrix *a, double val, int x, int y){
+MatrixError insertAtD(doubleMatrix *a, double val, int x, int y)
+{
     if (x < 0 || x >= a->width || y < 0 || y >= a->height)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     a->data[y * a->width + x] = val;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
-MatrixError insertAtF(floatMatrix *a, float val, int x, int y){
+MatrixError insertAtF(floatMatrix *a, float val, int x, int y)
+{
     if (x < 0 || x >= a->width || y < 0 || y >= a->height)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     a->data[y * a->width + x] = val;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
-MatrixError insertAtI(intMatrix *a, int val, int x, int y){
+MatrixError insertAtI(intMatrix *a, int val, int x, int y)
+{
     if (x < 0 || x >= a->width || y < 0 || y >= a->height)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     a->data[y * a->width + x] = val;
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError addD(doubleMatrix *a, const doubleMatrix *b)
 {
     if (a->height != b->height || a->width != b->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     int y, x;
     for (y = 0; y < a->height; y++)
     {
@@ -425,13 +437,13 @@ MatrixError addD(doubleMatrix *a, const doubleMatrix *b)
             a->data[y * a->width + x] += b->data[y * b->width + x];
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError addF(floatMatrix *a, const floatMatrix *b)
 {
     if (a->height != b->height || a->width != b->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     int y, x;
     for (y = 0; y < a->height; y++)
     {
@@ -440,13 +452,13 @@ MatrixError addF(floatMatrix *a, const floatMatrix *b)
             a->data[y * a->width + x] += b->data[y * b->width + x];
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError addI(intMatrix *a, const intMatrix *b)
 {
     if (a->height != b->height || a->width != b->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     int y, x;
     for (y = 0; y < a->height; y++)
     {
@@ -455,13 +467,13 @@ MatrixError addI(intMatrix *a, const intMatrix *b)
             a->data[y * a->width + x] += b->data[y * b->width + x];
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError subtractD(doubleMatrix *a, const doubleMatrix *b)
 {
     if (a->height != b->height || a->width != b->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     int y, x;
     for (y = 0; y < a->height; y++)
     {
@@ -470,12 +482,13 @@ MatrixError subtractD(doubleMatrix *a, const doubleMatrix *b)
             a->data[y * a->width + x] -= b->data[y * b->width + x];
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
+
 MatrixError subtractF(floatMatrix *a, const floatMatrix *b)
 {
     if (a->height != b->height || a->width != b->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     int y, x;
     for (y = 0; y < a->height; y++)
     {
@@ -484,12 +497,13 @@ MatrixError subtractF(floatMatrix *a, const floatMatrix *b)
             a->data[y * a->width + x] -= b->data[y * b->width + x];
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
+
 MatrixError subtractI(intMatrix *a, const intMatrix *b)
 {
     if (a->height != b->height || a->width != b->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     int y, x;
     for (y = 0; y < a->height; y++)
     {
@@ -498,7 +512,7 @@ MatrixError subtractI(intMatrix *a, const intMatrix *b)
             a->data[y * a->width + x] -= b->data[y * b->width + x];
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 void negativeD(doubleMatrix *a)
@@ -627,8 +641,10 @@ void transposeD(doubleMatrix *a)
     doubleMatrix tmp = DEFAULT_MATRIX;
     matrixNullD(&tmp, a->height, a->width);
     int y, x;
-    for (x = 0; x < a->width; x++){
-        for (y = 0; y < a->height; y++){
+    for (x = 0; x < a->width; x++)
+    {
+        for (y = 0; y < a->height; y++)
+        {
             insertAtD(&tmp, atD(a, x, y), y, x);
         }
     }
@@ -641,8 +657,10 @@ void transposeF(floatMatrix *a)
     floatMatrix tmp = DEFAULT_MATRIX;
     matrixNullF(&tmp, a->height, a->width);
     int y, x;
-    for (x = 0; x < a->width; x++){
-        for (y = 0; y < a->height; y++){
+    for (x = 0; x < a->width; x++)
+    {
+        for (y = 0; y < a->height; y++)
+        {
             insertAtF(&tmp, atF(a, x, y), y, x);
         }
     }
@@ -655,8 +673,10 @@ void transposeI(intMatrix *a)
     intMatrix tmp = DEFAULT_MATRIX;
     matrixNullI(&tmp, a->height, a->width);
     int y, x;
-    for (x = 0; x < a->width; x++){
-        for (y = 0; y < a->height; y++){
+    for (x = 0; x < a->width; x++)
+    {
+        for (y = 0; y < a->height; y++)
+        {
             insertAtI(&tmp, atI(a, x, y), y, x);
         }
     }
@@ -671,7 +691,8 @@ void doubleToString(char *dest, double num)
     int i;
     for (i = len - 1; i > 0; i--)
     {
-        if (dest[i] == '.'){
+        if (dest[i] == '.')
+        {
             dest[i] = ' ';
             break;
         }
@@ -693,7 +714,7 @@ MatrixError toStringD(char* dest, const doubleMatrix *a, size_t buffsize)
     if (!dest)
     {
         printf("Destination buffer was null pointer\n");
-        return BUFF_SIZE_ERROR;
+        return GET_ERROR(BUFF_SIZE_ERROR);
     }
     dest[0] = '\0';
     for (y = 0; y < a->height; y++)
@@ -710,7 +731,7 @@ MatrixError toStringD(char* dest, const doubleMatrix *a, size_t buffsize)
             }
             else
             {
-                return BUFF_SIZE_ERROR;
+                return GET_ERROR(BUFF_SIZE_ERROR);
             }
             strncat(dest, "\t", length);
             if (length >= 2)
@@ -719,7 +740,7 @@ MatrixError toStringD(char* dest, const doubleMatrix *a, size_t buffsize)
             }
             else
             {
-                return BUFF_SIZE_ERROR;
+                return GET_ERROR(BUFF_SIZE_ERROR);
             }
         }
         strncat(dest, "\n", length);
@@ -729,10 +750,10 @@ MatrixError toStringD(char* dest, const doubleMatrix *a, size_t buffsize)
         }
         else
         {
-            return BUFF_SIZE_ERROR;
+            return GET_ERROR(BUFF_SIZE_ERROR);
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 void floatToString(char *dest, float num)
@@ -742,7 +763,8 @@ void floatToString(char *dest, float num)
     int i;
     for (i = len - 1; i > 0; i--)
     {
-        if (dest[i] == '.'){
+        if (dest[i] == '.')
+        {
             dest[i] = ' ';
             break;
         }
@@ -764,7 +786,7 @@ MatrixError toStringF(char* dest, const floatMatrix *a, size_t buffsize)
     if (!dest)
     {
         printf("Destination buffer was null pointer\n");
-        return BUFF_SIZE_ERROR;
+        return GET_ERROR(BUFF_SIZE_ERROR);
     }
     dest[0] = '\0';
     for (y = 0; y < a->height; y++)
@@ -781,7 +803,7 @@ MatrixError toStringF(char* dest, const floatMatrix *a, size_t buffsize)
             }
             else
             {
-                return BUFF_SIZE_ERROR;
+                return GET_ERROR(BUFF_SIZE_ERROR);
             }
             strncat(dest, "\t", length);
             if (length >= 2)
@@ -790,7 +812,7 @@ MatrixError toStringF(char* dest, const floatMatrix *a, size_t buffsize)
             }
             else
             {
-                return BUFF_SIZE_ERROR;
+                return GET_ERROR(BUFF_SIZE_ERROR);
             }
         }
         strncat(dest, "\n", length);
@@ -800,10 +822,10 @@ MatrixError toStringF(char* dest, const floatMatrix *a, size_t buffsize)
         }
         else
         {
-            return BUFF_SIZE_ERROR;
+            return GET_ERROR(BUFF_SIZE_ERROR);
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError toStringI(char* dest, const intMatrix *a, size_t buffsize)
@@ -813,7 +835,7 @@ MatrixError toStringI(char* dest, const intMatrix *a, size_t buffsize)
     if (!dest)
     {
         printf("Destination buffer was null pointer\n");
-        return BUFF_SIZE_ERROR;
+        return GET_ERROR(BUFF_SIZE_ERROR);
     }
     dest[0] = '\0';
     for (y = 0; y < a->height; y++)
@@ -830,7 +852,7 @@ MatrixError toStringI(char* dest, const intMatrix *a, size_t buffsize)
             }
             else
             {
-                return BUFF_SIZE_ERROR;
+                return GET_ERROR(BUFF_SIZE_ERROR);
             }
             strncat(dest, "\t", length);
             if (length >= 2)
@@ -839,7 +861,7 @@ MatrixError toStringI(char* dest, const intMatrix *a, size_t buffsize)
             }
             else
             {
-                return BUFF_SIZE_ERROR;
+                return GET_ERROR(BUFF_SIZE_ERROR);
             }
         }
         strncat(dest, "\n", length);
@@ -849,17 +871,17 @@ MatrixError toStringI(char* dest, const intMatrix *a, size_t buffsize)
         }
         else
         {
-            return BUFF_SIZE_ERROR;
+            return GET_ERROR(BUFF_SIZE_ERROR);
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 double determinant2x2D(const doubleMatrix *a)
 {
     if (a->height != 2 || a->width != 2)
     {
-        puts(getErrorMessage(MATH_ERROR));
+        PRINT_ERROR_CODE(MATH_ERROR);
         exit(EXIT_FAILURE);
     }
     return a->data[0] * a->data[3] - a->data[1] * a->data[2];
@@ -869,7 +891,7 @@ float determinant2x2F(const floatMatrix *a)
 {
     if (a->height != 2 || a->width != 2)
     {
-        puts(getErrorMessage(MATH_ERROR));
+        PRINT_ERROR_CODE(MATH_ERROR);
         exit(EXIT_FAILURE);
     }
     return a->data[0] * a->data[3] - a->data[1] * a->data[2];
@@ -879,7 +901,7 @@ int determinant2x2I(const intMatrix *a)
 {
     if (a->height != 2 || a->width != 2)
     {
-        puts(getErrorMessage(MATH_ERROR));
+        PRINT_ERROR_CODE(MATH_ERROR);
         exit(EXIT_FAILURE);
     }
     return a->data[0] * a->data[3] - a->data[1] * a->data[2];
@@ -891,12 +913,12 @@ double determinantD(const doubleMatrix *a, int row)
     int h = a->height;
     if (h != w)
     {
-        puts(getErrorMessage(MATH_ERROR));
+        PRINT_ERROR_CODE(MATH_ERROR);
         exit(EXIT_FAILURE);
     }
     if (row < 0 || row > w)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
         exit(EXIT_FAILURE);
     }
 
@@ -916,9 +938,9 @@ double determinantD(const doubleMatrix *a, int row)
 
             doubleMatrix tmp = DEFAULT_MATRIX;
             MatrixError e = matrixNullD(&tmp, w-1, h-1);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
             {
-                puts(getErrorMessage(e));
+                printError(e);
                 exit(EXIT_FAILURE);
             }
             int y;
@@ -952,12 +974,12 @@ float determinantF(const floatMatrix *a, int row)
     int h = a->height;
     if (h != w)
     {
-        puts(getErrorMessage(MATH_ERROR));
+        PRINT_ERROR_CODE(MATH_ERROR);
         exit(EXIT_FAILURE);
     }
     if (row < 0 || row > w)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
         exit(EXIT_FAILURE);
     }
 
@@ -977,9 +999,9 @@ float determinantF(const floatMatrix *a, int row)
 
             floatMatrix tmp = DEFAULT_MATRIX;
             MatrixError e = matrixNullF(&tmp, w-1, h-1);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
             {
-                puts(getErrorMessage(e));
+                printError(e);
                 exit(EXIT_FAILURE);
             }
 
@@ -1014,12 +1036,12 @@ int determinantI(const intMatrix *a, int row)
     int h = a->height;
     if (h != w)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
         exit(EXIT_FAILURE);
     }
     if (row < 0 || row > w)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
         exit(EXIT_FAILURE);
     }
 
@@ -1039,9 +1061,9 @@ int determinantI(const intMatrix *a, int row)
 
             intMatrix tmp = DEFAULT_MATRIX;
             MatrixError e = matrixNullI(&tmp, w-1, h-1);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
             {
-                puts(getErrorMessage(e));
+                printError(e);
                 exit(EXIT_FAILURE);
             }
 
@@ -1111,10 +1133,10 @@ MatrixError stdCofactorD(doubleMatrix * dest, const doubleMatrix *a)
     int w = a->width;
     int h = a->height;
     if (h != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->height != h || dest->width != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < h; y++)
@@ -1124,7 +1146,7 @@ MatrixError stdCofactorD(doubleMatrix * dest, const doubleMatrix *a)
         {
             doubleMatrix det = DEFAULT_MATRIX;
             MatrixError e = matrixNullD(&det, w-1, h-1);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
                 return e;
 
             int ycount = 0;
@@ -1139,8 +1161,7 @@ MatrixError stdCofactorD(doubleMatrix * dest, const doubleMatrix *a)
                     {
                         if (xdet != x)
                         {
-                            //insertAtD(&det, atD(a, xdet, ydet), xcount++, ycount);
-                            det.data[ycount * det.width + (xcount++)] = atD(a, xdet, ydet);
+                            insertAtD(&det, atD(a, xdet, ydet), xcount++, ycount);
                         }
                     }
                     ycount++;
@@ -1158,7 +1179,7 @@ MatrixError stdCofactorD(doubleMatrix * dest, const doubleMatrix *a)
             destroymD(&det);
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 void * cofactorThreadD(void * m)
@@ -1169,8 +1190,8 @@ void * cofactorThreadD(void * m)
     {
         doubleMatrix det = DEFAULT_MATRIX;
         MatrixError e = matrixNullD(&det, s-1, s-1);
-        if (e != SUCCESS)
-            pthread_exit((void*)e);
+        if (e.code != SUCCESS)
+            pthread_exit((void*)e.code);
 
         int ycount = 0;
         int ydet;
@@ -1209,10 +1230,10 @@ MatrixError paraCofactorD(doubleMatrix * dest, const doubleMatrix *a)
     int w = a->width;
     int h = a->height;
     if (h != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->height != h || dest->width != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     pthread_t threads[NTHREADS];
     cofactorArgD thread_args[NTHREADS];
@@ -1225,15 +1246,15 @@ MatrixError paraCofactorD(doubleMatrix * dest, const doubleMatrix *a)
         thread_args[y] = arg;
         rc = pthread_create(&threads[y], NULL, cofactorThreadD, (void *) &thread_args[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
     for (y = 0; y < h; y++)
     {
         pthread_join(threads[y], NULL);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError stdCofactorF(floatMatrix * dest, const floatMatrix *a)
@@ -1241,10 +1262,10 @@ MatrixError stdCofactorF(floatMatrix * dest, const floatMatrix *a)
     int w = a->width;
     int h = a->height;
     if (h != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->height != h || dest->width != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < h; y++)
@@ -1254,7 +1275,7 @@ MatrixError stdCofactorF(floatMatrix * dest, const floatMatrix *a)
         {
             floatMatrix det = DEFAULT_MATRIX;
             MatrixError e = matrixNullF(&det, w-1, h-1);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
                 return e;
 
             int ycount = 0;
@@ -1269,7 +1290,7 @@ MatrixError stdCofactorF(floatMatrix * dest, const floatMatrix *a)
                     {
                         if (xdet != x)
                         {
-                            det.data[ycount * det.width + (xcount++)] = a->data[ydet * a->width + xdet];
+                            insertAtF(&det, atF(a, xdet, ydet), xcount++, ycount);
                         }
                     }
                     ycount++;
@@ -1286,7 +1307,7 @@ MatrixError stdCofactorF(floatMatrix * dest, const floatMatrix *a)
             destroymF(&det);
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 
@@ -1298,8 +1319,8 @@ void * cofactorThreadF(void * m)
     {
         floatMatrix det = DEFAULT_MATRIX;
         MatrixError e = matrixNullF(&det, s-1, s-1);
-        if (e != SUCCESS)
-            pthread_exit((void*)e);
+        if (e.code != SUCCESS)
+            pthread_exit((void*)e.code);
         int ycount = 0;
         int ydet;
         for (ydet = 0; ydet < s; ydet++)
@@ -1338,11 +1359,11 @@ MatrixError paraCofactorF(floatMatrix * dest, const floatMatrix *a)
     int h = a->height;
     if (h != w)
     {
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     }
     if (dest->height != h || dest->width != w)
     {
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     }
 
     pthread_t threads[NTHREADS];
@@ -1356,15 +1377,15 @@ MatrixError paraCofactorF(floatMatrix * dest, const floatMatrix *a)
         thread_args[y] = arg;
         rc = pthread_create(&threads[y], NULL, cofactorThreadF, (void *) &thread_args[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
     for (y = 0; y < h; y++)
     {
         pthread_join(threads[y], NULL);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError stdCofactorI(intMatrix * dest, const intMatrix *a)
@@ -1372,10 +1393,10 @@ MatrixError stdCofactorI(intMatrix * dest, const intMatrix *a)
     int w = a->width;
     int h = a->height;
     if (h != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->height != h || dest->width != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < h; y++)
@@ -1385,7 +1406,7 @@ MatrixError stdCofactorI(intMatrix * dest, const intMatrix *a)
         {
             intMatrix det = DEFAULT_MATRIX;
             MatrixError e = matrixNullI(&det, w-1, h-1);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
                 return e;
 
             int ycount = 0;
@@ -1400,7 +1421,7 @@ MatrixError stdCofactorI(intMatrix * dest, const intMatrix *a)
                     {
                         if (xdet != x)
                         {
-                            det.data[ycount * det.width + (xcount++)] = a->data[ydet * a->width + xdet];
+                            insertAtI(&det, atI(a, xdet, ydet), xcount++, ycount);
                         }
                     }
                     ycount++;
@@ -1417,7 +1438,7 @@ MatrixError stdCofactorI(intMatrix * dest, const intMatrix *a)
             destroymI(&det);
         }
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 void * cofactorThreadI(void * m)
@@ -1428,8 +1449,8 @@ void * cofactorThreadI(void * m)
     {
         intMatrix det = DEFAULT_MATRIX;
         MatrixError e = matrixNullI(&det, s-1, s-1);
-        if (e != SUCCESS)
-            pthread_exit((void*)e);
+        if (e.code != SUCCESS)
+            pthread_exit((void*)e.code);
 
         int ycount = 0;
         int ydet;
@@ -1468,10 +1489,10 @@ MatrixError paraCofactorI(intMatrix * dest, const intMatrix *a)
     int w = a->width;
     int h = a->height;
     if (h != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->height != h || dest->width != w)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     pthread_t threads[NTHREADS];
     cofactorArgI thread_args[NTHREADS];
@@ -1484,24 +1505,24 @@ MatrixError paraCofactorI(intMatrix * dest, const intMatrix *a)
         thread_args[y] = arg;
         rc = pthread_create(&threads[y], NULL, cofactorThreadI, (void *) &thread_args[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
     for (y = 0; y < h; y++)
     {
         rc = pthread_join(threads[y], NULL);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError adjointD(doubleMatrix * dest, const doubleMatrix *a)
 {
     MatrixError e = cofactorD(dest, a);
-    if (e == SUCCESS)
+    if (e.code == SUCCESS)
     {
         transposeD(dest);
-        return SUCCESS;
+        return GET_ERROR(SUCCESS);
     }
     return e;
 }
@@ -1509,10 +1530,10 @@ MatrixError adjointD(doubleMatrix * dest, const doubleMatrix *a)
 MatrixError adjointF(floatMatrix * dest, const floatMatrix *a)
 {
     MatrixError e = cofactorF(dest, a);
-    if (e == SUCCESS)
+    if (e.code == SUCCESS)
     {
         transposeF(dest);
-        return SUCCESS;
+        return GET_ERROR(SUCCESS);
     }
     return e;
 }
@@ -1521,10 +1542,10 @@ MatrixError adjointF(floatMatrix * dest, const floatMatrix *a)
 MatrixError adjointI(intMatrix * dest, const intMatrix *a)
 {
     MatrixError e = cofactorI(dest, a);
-    if (e == SUCCESS)
+    if (e.code == SUCCESS)
     {
         transposeI(dest);
-        return SUCCESS;
+        return GET_ERROR(SUCCESS);
     }
     return e;
 }
@@ -1532,10 +1553,10 @@ MatrixError adjointI(intMatrix * dest, const intMatrix *a)
 MatrixError stdAdjointD(doubleMatrix * dest, const doubleMatrix *a)
 {
     MatrixError e = stdCofactorD(dest, a);
-    if (e == SUCCESS)
+    if (e.code == SUCCESS)
     {
         transposeD(dest);
-        return SUCCESS;
+        return GET_ERROR(SUCCESS);
     }
     return e;
 }
@@ -1543,10 +1564,10 @@ MatrixError stdAdjointD(doubleMatrix * dest, const doubleMatrix *a)
 MatrixError stdAdjointF(floatMatrix * dest, const floatMatrix *a)
 {
     MatrixError e = stdCofactorF(dest, a);
-    if (e == SUCCESS)
+    if (e.code == SUCCESS)
     {
         transposeF(dest);
-        return SUCCESS;
+        return GET_ERROR(SUCCESS);
     }
     return e;
 }
@@ -1554,10 +1575,10 @@ MatrixError stdAdjointF(floatMatrix * dest, const floatMatrix *a)
 MatrixError stdAdjointI(intMatrix * dest, const intMatrix *a)
 {
     MatrixError e = stdCofactorI(dest, a);
-    if (e == SUCCESS)
+    if (e.code == SUCCESS)
     {
         transposeI(dest);
-        return SUCCESS;
+        return GET_ERROR(SUCCESS);
     }
     return e;
 }
@@ -1565,14 +1586,14 @@ MatrixError stdAdjointI(intMatrix * dest, const intMatrix *a)
 MatrixError invert2x2D(doubleMatrix * dest, const doubleMatrix *a)
 {
     if (a->width != 2 || a->width != 2)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != 2 || dest->height != 2)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     double det = determinant2x2D(a);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     double d = 1.0 / det;
 
@@ -1583,21 +1604,21 @@ MatrixError invert2x2D(doubleMatrix * dest, const doubleMatrix *a)
     dest->data[2] = -a->data[2] * d;
     dest->data[3] = tmp0 * d;
 
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError invert2x2F(doubleMatrix * dest, const floatMatrix *a)
 {
     if (a->width != 2 || a->width != 2)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != 2 || dest->height != 2)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
 
     double det = (double)determinant2x2F(a);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     double d = 1.0 / det;
 
@@ -1608,20 +1629,20 @@ MatrixError invert2x2F(doubleMatrix * dest, const floatMatrix *a)
     dest->data[2] = (double) (-a->data[2] * d);
     dest->data[3] = (double) (tmp0 * d);
 
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError invert2x2I(doubleMatrix * dest, const intMatrix *a)
 {
     if (a->width != 2 || a->width != 2)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != 2 || dest->height != 2)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     double det = (double)determinant2x2I(a);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     double d = 1.0 / det;
 
@@ -1632,7 +1653,7 @@ MatrixError invert2x2I(doubleMatrix * dest, const intMatrix *a)
     dest->data[2] = (double) (-a->data[2] * d);
     dest->data[3] = (double) (tmp0 * d);
 
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError invertD(doubleMatrix * dest, const doubleMatrix *a)
@@ -1640,17 +1661,17 @@ MatrixError invertD(doubleMatrix * dest, const doubleMatrix *a)
     int w = a->width;
     int h = a->height;
     if (w != h)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != dest->height || dest->data == NULL)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (h == 2)
         return invert2x2D(dest, a);
 
     double det = determinantD(a,0);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     int y, x;
     for (y = 0; y < h; y++)
@@ -1668,11 +1689,11 @@ MatrixError invertD(doubleMatrix * dest, const doubleMatrix *a)
 
     destroymD(&tmpM);
 
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError invertF(doubleMatrix * dest, const floatMatrix *a)
@@ -1680,17 +1701,17 @@ MatrixError invertF(doubleMatrix * dest, const floatMatrix *a)
     int w = a->width;
     int h = a->height;
     if (w != h)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != dest->height || dest->data == NULL)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (h == 2)
         return invert2x2F(dest, a);
 
     double det = (double)determinantF(a,0);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     int y, x;
     for (y = 0; y < h; y++)
@@ -1703,16 +1724,16 @@ MatrixError invertF(doubleMatrix * dest, const floatMatrix *a)
 
     doubleMatrix tmpM = DEFAULT_MATRIX;
     MatrixError e = matrixD(&tmpM, dest->data, dest->width, dest->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     e = adjointD(dest, &tmpM);
     destroymD(&tmpM);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError invertI(doubleMatrix * dest, const intMatrix *a)
@@ -1720,17 +1741,17 @@ MatrixError invertI(doubleMatrix * dest, const intMatrix *a)
     int w = a->width;
     int h = a->height;
     if (w != h)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != dest->height || dest->data == NULL)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (h == 2)
         return invert2x2I(dest, a);
 
     double det = (double)determinantI(a,0);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     int y, x;
     for (y = 0; y < h; y++)
@@ -1743,16 +1764,16 @@ MatrixError invertI(doubleMatrix * dest, const intMatrix *a)
 
     doubleMatrix tmpM = DEFAULT_MATRIX;
     MatrixError e = matrixD(&tmpM, dest->data, dest->width, dest->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     e = adjointD(dest, &tmpM);
     destroymD(&tmpM);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError stdInvertD(doubleMatrix * dest, const doubleMatrix *a)
@@ -1760,17 +1781,17 @@ MatrixError stdInvertD(doubleMatrix * dest, const doubleMatrix *a)
     int w = a->width;
     int h = a->height;
     if (w != h)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != dest->height || dest->data == NULL)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (h == 2)
         return invert2x2D(dest, a);
 
     double det = determinantD(a,0);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     int y, x;
     for (y = 0; y < h; y++)
@@ -1783,17 +1804,17 @@ MatrixError stdInvertD(doubleMatrix * dest, const doubleMatrix *a)
 
     doubleMatrix tmpM = DEFAULT_MATRIX;
     MatrixError e = matrixD(&tmpM, dest->data, dest->width, dest->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     e = stdAdjointD(dest, &tmpM);
 
     destroymD(&tmpM);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 
@@ -1802,17 +1823,17 @@ MatrixError stdInvertF(doubleMatrix * dest, const floatMatrix *a)
     int w = a->width;
     int h = a->height;
     if (w != h)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != dest->height || dest->data == NULL)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (h == 2)
         return invert2x2F(dest, a);
 
     double det = (double)determinantF(a,0);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     int y, x;
     for (y = 0; y < h; y++)
@@ -1825,16 +1846,16 @@ MatrixError stdInvertF(doubleMatrix * dest, const floatMatrix *a)
 
     doubleMatrix tmpM = DEFAULT_MATRIX;
     MatrixError e = matrixD(&tmpM, dest->data, dest->width, dest->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     e = stdAdjointD(dest, &tmpM);
     destroymD(&tmpM);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 
@@ -1843,17 +1864,17 @@ MatrixError stdInvertI(doubleMatrix * dest, const intMatrix *a)
     int w = a->width;
     int h = a->height;
     if (w != h)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (dest->width != dest->height || dest->data == NULL)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     if (h == 2)
         return invert2x2I(dest, a);
 
     double det = (double)determinantI(a,0);
     if (!det)
-        return MATH_ERROR;
+        return GET_ERROR(MATH_ERROR);
 
     int y, x;
     for (y = 0; y < h; y++)
@@ -1866,93 +1887,93 @@ MatrixError stdInvertI(doubleMatrix * dest, const intMatrix *a)
 
     doubleMatrix tmpM = DEFAULT_MATRIX;
     MatrixError e = matrixD(&tmpM, dest->data, dest->width, dest->height);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     e = stdAdjointD(dest, &tmpM);
     destroymD(&tmpM);
-    if (e != SUCCESS)
+    if (e.code != SUCCESS)
         return e;
 
     scalarMultiplyD(dest, 1.0/det);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError getColD(doubleMatrix *dest, const doubleMatrix *a, int x)
 {
     if (x < 0 || x >= a->width)
-        return FAILURE;
+        return GET_ERROR(FAILURE);
     if (dest->height != a->height || dest->width != 1)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < a->height; y++)
     {
         dest->data[y] = atD(a, x, y);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError getColF(floatMatrix *dest, const floatMatrix *a, int x)
 {
     if (x < 0 || x >= a->width)
-        return FAILURE;
+        return GET_ERROR(FAILURE);
     if (dest->height != a->height || dest->width != 1)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < a->height; y++)
     {
         dest->data[y] = atF(a, x, y);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError getColI(intMatrix *dest, const intMatrix *a, int x)
 {
     if (x < 0 || x >= a->width)
-        return FAILURE;
+        return GET_ERROR(FAILURE);
     if (dest->height != a->height || dest->width != 1)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < a->height; y++)
     {
         dest->data[y] = atI(a, x, y);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError getRowD(doubleMatrix *dest, const doubleMatrix *a, int y)
 {
     if (y < 0 || y >= a->height)
-        return FAILURE;
+        return GET_ERROR(FAILURE);
     if (dest->width != a->width || dest->height != 1)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     memcpy((void*)dest->data, (void*)(a->data+y*a->width), a->width * sizeof(double));
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError getRowF(floatMatrix *dest, const floatMatrix *a, int y)
 {
     if (y < 0 || y >= a->height)
-        return FAILURE;
+        return GET_ERROR(FAILURE);
     if (dest->width != a->width || dest->height != 1)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     memcpy((void*)dest->data, (void*)(a->data+ y*a->width), a->width * sizeof(float));
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 MatrixError getRowI(intMatrix *dest, const intMatrix *a, int y)
 {
     if (y < 0 || y >= a->height)
-        return FAILURE;
+        return GET_ERROR(FAILURE);
     if (dest->width != a->width || dest->height != 1)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     memcpy((void*)dest->data, (void*)(a->data + y*a->width), a->width * sizeof(int));
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError crossProductD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b)
@@ -1960,12 +1981,12 @@ MatrixError crossProductD(doubleMatrix *dest, const doubleMatrix *a, const doubl
     //dest, a & b must be in R^3
     if (a->width != 1 || a->height != 3 || b->width != 1 || b->height != 3 || dest->height != 3 || dest->width != 1)
     {
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     }
     dest->data[0] = atD(a, 0, 1) * atD(b, 0, 2) - atD(a, 0, 2) * atD(b, 0, 1);
     dest->data[1] = atD(a, 0, 2) * atD(b, 0, 0) - atD(a, 0, 0) * atD(b, 0, 2);
     dest->data[2] = atD(a, 0, 0) * atD(b, 0, 1) - atD(a, 0, 1) * atD(b, 0, 0);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError crossProductF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b)
@@ -1973,12 +1994,12 @@ MatrixError crossProductF(floatMatrix *dest, const floatMatrix *a, const floatMa
     //dest, a & b must be in R^3
     if (a->width != 1 || a->height != 3 || b->width != 1 || b->height != 3 || dest->height != 3 || dest->width != 1)
     {
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     }
     dest->data[0] = atF(a, 0, 1) * atF(b, 0, 2) - atF(a, 0, 2) * atF(b, 0, 1);
     dest->data[1] = atF(a, 0, 2) * atF(b, 0, 0) - atF(a, 0, 0) * atF(b, 0, 2);
     dest->data[2] = atF(a, 0, 0) * atF(b, 0, 1) - atF(a, 0, 1) * atF(b, 0, 0);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError crossProductI(intMatrix *dest, const intMatrix *a, const intMatrix *b)
@@ -1986,12 +2007,12 @@ MatrixError crossProductI(intMatrix *dest, const intMatrix *a, const intMatrix *
     //dest, a & b must be in R^3
     if (a->width != 1 || a->height != 3 || b->width != 1 || b->height != 3 || dest->height != 3 || dest->width != 1)
     {
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
     }
     dest->data[0] = atI(a, 0, 1) * atI(b, 0, 2) - atI(a, 0, 2) * atI(b, 0, 1);
     dest->data[1] = atI(a, 0, 2) * atI(b, 0, 0) - atI(a, 0, 0) * atI(b, 0, 2);
     dest->data[2] = atI(a, 0, 0) * atI(b, 0, 1) - atI(a, 0, 1) * atI(b, 0, 0);
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 double dotProductD(const doubleMatrix *a, const doubleMatrix *b)
@@ -1999,7 +2020,7 @@ double dotProductD(const doubleMatrix *a, const doubleMatrix *b)
     //a & b must be in R^n
     if (a->width != 1 || b->width != 1 || a->height != b->height)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
     }
 
     double output = 0;
@@ -2016,7 +2037,7 @@ float dotProductF(const floatMatrix *a, const floatMatrix *b)
     //a & b must be in R^n
     if (a->width != 1 || b->width != 1 || a->height != b->height)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
     }
 
     float output = 0;
@@ -2033,7 +2054,7 @@ int dotProductI(const intMatrix *a, const intMatrix *b)
     //a & b must be in R^n
     if (a->width != 1 || b->width != 1 || a->height != b->height)
     {
-        puts(getErrorMessage(DIMENSION_ERROR));
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
     }
 
     int output = 0;
@@ -2065,13 +2086,13 @@ void * multiplyThreadD(void * arg)
     {
         doubleMatrix tmpCol = DEFAULT_MATRIX;
         MatrixError e = matrixNullD(&tmpCol, 1, ((multiplyArgD*)arg)->b->height);
-        if (e != SUCCESS)
-            return (void*)e;
+        if (e.code != SUCCESS)
+            return (void*)e.code;
         e = getColD(&tmpCol, ((multiplyArgD*)arg)->b, x);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymD(&tmpCol);
-            return (void*)e;
+            return (void*)e.code;
         }
         double dp = 0;
         int i;
@@ -2088,7 +2109,7 @@ void * multiplyThreadD(void * arg)
 MatrixError paraMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b)
 {
     if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     pthread_t threads[NTHREADS];
     multiplyArgD thread_args[NTHREADS];
@@ -2099,11 +2120,11 @@ MatrixError paraMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubl
     for (y = 0; y < a->height; y++)
     {
         MatrixError e = matrixNullD(&rows[y], a->width, 1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
             return e;
 
         e = getRowD(&rows[y], a, y);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymD(&rows[y]);
             return e;
@@ -2113,7 +2134,7 @@ MatrixError paraMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubl
         thread_args[y] = arg;
         rc = pthread_create(&threads[y], NULL, multiplyThreadD, (void *) &thread_args[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
 
 
@@ -2121,27 +2142,27 @@ MatrixError paraMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubl
     {
         rc = pthread_join(threads[y], NULL);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
         destroymD(&rows[y]);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError stdMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b)
 {
     if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < a->height; y++)
     {
         doubleMatrix tmpRow = DEFAULT_MATRIX;
         MatrixError e = matrixNullD(&tmpRow, a->width, 1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
             return e;
 
         e = getRowD(&tmpRow, a, y);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymD(&tmpRow);
             return e;
@@ -2152,11 +2173,11 @@ MatrixError stdMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const double
         {
             doubleMatrix tmpCol = DEFAULT_MATRIX;
             e = matrixNullD(&tmpCol, 1, b->height);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
                 return e;
 
             e = getColD(&tmpCol, b, x);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
             {
                 destroymD(&tmpCol);
                 return e;
@@ -2173,7 +2194,7 @@ MatrixError stdMultiplyD(doubleMatrix *dest, const doubleMatrix *a, const double
         }
         destroymD(&tmpRow);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError multiplyF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b)
@@ -2196,13 +2217,13 @@ void * multiplyThreadF(void * arg)
     {
         floatMatrix tmpCol = DEFAULT_MATRIX;
         MatrixError e = matrixNullF(&tmpCol, 1, ((multiplyArgF*)arg)->b->height);
-        if (e != SUCCESS)
-            return (void*)e;
+        if (e.code != SUCCESS)
+            return (void*)e.code;
         e = getColF(&tmpCol, ((multiplyArgF*)arg)->b, x);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymF(&tmpCol);
-            return (void*)e;
+            return (void*)e.code;
         }
         float dp = 0;
         int i;
@@ -2219,7 +2240,7 @@ void * multiplyThreadF(void * arg)
 MatrixError paraMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b)
 {
     if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     pthread_t threads[NTHREADS];
     multiplyArgF thread_args[NTHREADS];
@@ -2230,11 +2251,11 @@ MatrixError paraMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMa
     for (y = 0; y < a->height; y++)
     {
         MatrixError e = matrixNullF(&rows[y], a->width, 1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
             return e;
 
         e = getRowF(&rows[y], a, y);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymF(&rows[y]);
             return e;
@@ -2244,7 +2265,7 @@ MatrixError paraMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMa
         thread_args[y] = arg;
         rc = pthread_create(&threads[y], NULL, multiplyThreadF, (void *) &thread_args[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
 
 
@@ -2253,26 +2274,26 @@ MatrixError paraMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMa
         rc = pthread_join(threads[y], NULL);
         destroymF(&rows[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError stdMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b)
 {
     if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < a->height; y++)
     {
         floatMatrix tmpRow = DEFAULT_MATRIX;
         MatrixError e = matrixNullF(&tmpRow, a->width, 1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
             return e;
 
         e = getRowF(&tmpRow, a, y);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymF(&tmpRow);
             return e;
@@ -2283,11 +2304,11 @@ MatrixError stdMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMat
         {
             floatMatrix tmpCol = DEFAULT_MATRIX;
             e = matrixNullF(&tmpCol, 1, b->height);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
                 return e;
 
             e = getColF(&tmpCol, b, x);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
             {
                 destroymF(&tmpCol);
                 return e;
@@ -2304,7 +2325,7 @@ MatrixError stdMultiplyF(floatMatrix *dest, const floatMatrix *a, const floatMat
         }
         destroymF(&tmpRow);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError multiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b)
@@ -2328,13 +2349,13 @@ void * multiplyThreadI(void * arg)
     {
         intMatrix tmpCol = DEFAULT_MATRIX;
         MatrixError e = matrixNullI(&tmpCol, 1, ((multiplyArgI*)arg)->b->height);
-        if (e != SUCCESS)
-            return (void*)e;
+        if (e.code != SUCCESS)
+            return (void*)e.code;
         e = getColI(&tmpCol, ((multiplyArgI*)arg)->b, x);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymI(&tmpCol);
-            return (void*)e;
+            return (void*)e.code;
         }
         int dp = 0;
         int i;
@@ -2351,7 +2372,7 @@ void * multiplyThreadI(void * arg)
 MatrixError paraMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b)
 {
     if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != dest->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     pthread_t threads[NTHREADS];
     multiplyArgI thread_args[NTHREADS];
@@ -2362,11 +2383,11 @@ MatrixError paraMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *
     for (y = 0; y < a->height; y++)
     {
         MatrixError e = matrixNullI(&rows[y], a->width, 1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
             return e;
 
         e = getRowI(&rows[y], a, y);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymI(&rows[y]);
             return e;
@@ -2376,7 +2397,7 @@ MatrixError paraMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *
         thread_args[y] = arg;
         rc = pthread_create(&threads[y], NULL, multiplyThreadI, (void *) &thread_args[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
 
 
@@ -2385,26 +2406,26 @@ MatrixError paraMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *
         pthread_join(threads[y], NULL);
         destroymI(&rows[y]);
         if (rc)
-            return (MatrixError)rc;
+            return GET_ERROR((MatrixErrorCode)rc);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
 
 MatrixError stdMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b)
 {
     if (a->width != b->height || a->height != b->width || dest->height != a->height || dest->width != b->width)
-        return DIMENSION_ERROR;
+        return GET_ERROR(DIMENSION_ERROR);
 
     int y;
     for (y = 0; y < a->height; y++)
     {
         intMatrix tmpRow = DEFAULT_MATRIX;
         MatrixError e = matrixNullI(&tmpRow, a->width, 1);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
             return e;
 
         e = getRowI(&tmpRow, a, y);
-        if (e != SUCCESS)
+        if (e.code != SUCCESS)
         {
             destroymI(&tmpRow);
             return e;
@@ -2415,11 +2436,11 @@ MatrixError stdMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b
         {
             intMatrix tmpCol = DEFAULT_MATRIX;
             e = matrixNullI(&tmpCol, 1, b->height);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
                 return e;
 
             e = getColI(&tmpCol, b, x);
-            if (e != SUCCESS)
+            if (e.code != SUCCESS)
             {
                 destroymI(&tmpCol);
                 return e;
@@ -2436,5 +2457,5 @@ MatrixError stdMultiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b
         }
         destroymI(&tmpRow);
     }
-    return SUCCESS;
+    return GET_ERROR(SUCCESS);
 }
