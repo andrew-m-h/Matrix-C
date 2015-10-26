@@ -13,6 +13,7 @@ Multiply:
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "matrix.h"
 #include "matrix-test.h"
 
@@ -21,6 +22,7 @@ Multiply:
 #define NUM_ARGS_INVERT 5
 #define NUM_ARGS_TRANSPOSE 5
 #define NUM_ARGS_MULTIPLY 7
+#define NUM_ARGS_GENERATE 7
 
 /*
 The layout of this main file, is designed to be easily extensible for adding new tools.
@@ -49,6 +51,7 @@ typedef enum
     INVERT,
     TRANSPOSE,
     MULTIPLY,
+    GENERATE,
     TEST
 } TOOL;
 
@@ -56,6 +59,7 @@ void getHelpMessage(char * dest, TOOL tool);
 int invert(int argc, char* argv[]);
 int transpose(int argc, char* argv[]);
 int multiply(int argc, char* argv[]);
+int generate(int argc, char* argv[]);
 int test(int argc);
 
 int main(int argc, char* argv[])
@@ -86,6 +90,10 @@ int main(int argc, char* argv[])
             else if(!strcmp(argv[i+1], "multiply"))
             {
                 return multiply(argc, argv);
+            }
+            else if(!strcmp(argv[i+1], "generate"))
+            {
+                return generate(argc, argv);
             }
             else if(!strcmp(argv[i+1], "test"))
             {
@@ -131,7 +139,6 @@ enum
     T_INPUT,
     T_OUTPUT,
     T_HELP,
-    T_TEST
 };
 
 enum
@@ -143,7 +150,17 @@ enum
     M_OUTPUT,
     M_PARALLEL,
     M_HELP,
-    M_TEST
+};
+
+enum
+{
+    G_WIDTH = 0,
+    G_HEIGHT,
+    G_DATATYPE,
+    G_LOWER,
+    G_UPPER,
+    G_OUTPUT,
+    G_HELP
 };
 
 //The argument struct, used to store information about each argument.
@@ -185,6 +202,17 @@ Argument argumentsMultiply[NUM_ARGS_MULTIPLY] =
     {.longCode="--output", .shortCode="-o", .description="The name of a file, which the resulting matrix will be written to", .code=M_OUTPUT, .mandatory=FALSE, .value=NULL},
     {.longCode="--parallel", .shortCode="-p", .description="Control if program runs in parallel", .code=M_PARALLEL, .mandatory=FALSE, .value=NULL},
     {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=M_HELP, .mandatory=FALSE, .value=NULL}
+};
+
+Argument argumentsGenerate[NUM_ARGS_GENERATE] =
+{
+    {.longCode="--width", .shortCode="-x", .description="The width, x, of the output x by y matrix. x must be an integer.", .code=G_WIDTH, .mandatory=TRUE, .value=NULL},
+    {.longCode="--height", .shortCode="-y", .description="The height, y, of the output x by y matrix. y must be an integer.", .code=G_HEIGHT, .mandatory=TRUE, .value=NULL},
+    {.longCode="--datatype", .shortCode="-d", .description="Define if only integral or floating values should be returned", .code=G_DATATYPE, .mandatory=FALSE, .value=NULL},
+    {.longCode="--lower", .shortCode="-l", .description="The lowest value with which to fill the matrix", .code=G_LOWER, .mandatory=FALSE, .value=NULL},
+    {.longCode="--upper", .shortCode="-u", .description="The greatest value with which to fill the matrix", .code=G_UPPER, .mandatory=FALSE, .value=NULL},
+    {.longCode="--output", .shortCode="-o", .description="The name of a file which the matrix will be written to", .code=G_OUTPUT, .mandatory=FALSE, .value=NULL},
+    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=G_HELP, .mandatory=FALSE, .value=NULL}
 };
 
 //Invert tool
@@ -876,6 +904,241 @@ int multiply(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
+//Generate tool
+int generate(int argc, char* argv[])
+{
+    char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
+    getHelpMessage(helpMessage, INVERT);
+    int i;
+    //Iterate through the command line arguments, they come in pairs, --flag value
+    for (i = 1; i < argc; i+=2)
+    {
+        //Ignore the --mode flag, its already bean dealt with (if present)
+        if (!strcmp(argv[i], TOOL_CODE_LONG) || !strcmp(argv[i], TOOL_CODE_SHORT))
+            continue;
+
+        //Deal with --help flag being the last argument
+        if (i+1 == argc && strcmp(argv[i], argumentsGenerate[G_HELP].shortCode) && strcmp(argv[i], argumentsGenerate[G_HELP].longCode))
+        {
+            printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
+            return EXIT_FAILURE;
+        }
+
+        /*
+        Since C has no map, it is nessecairy to linear search through all possible arguments.
+        This is not a problem since the numbers are so small
+        */
+        int a;
+        for (a = 0; a < NUM_ARGS_GENERATE; a++)
+        {
+            if (!strcmp(argv[i], argumentsGenerate[a].longCode) || !strcmp(argv[i], argumentsGenerate[a].shortCode))
+            {
+                /*The help flag is a special unary argument. If present, the program should print out
+                The help message, and nothing more*/
+                if (argumentsGenerate[a].code == G_HELP)
+                {
+                    puts(helpMessage);
+                    return EXIT_SUCCESS;
+                }
+                argumentsGenerate[a].value = argv[i+1];
+                break;
+            }
+            else if (a == NUM_ARGS_GENERATE - 1)
+            {
+                /*If an invalid flag is passed to a tool, the program should print out a help message,
+                and exit in error*/
+                printf("Generate does not accept the argument: %s\n", argv[i]);
+                puts(helpMessage);
+                return EXIT_FAILURE;
+            }
+        }
+    }
+
+    for (i = 0; i < NUM_ARGS_GENERATE; i++)
+    {
+        //With all arguments processed, the program still needs to check if all mandatory arguments have been passed
+        //If they have not, the program should return help and exit in error
+        if (argumentsGenerate[i].value == NULL && argumentsGenerate[i].mandatory)
+        {
+            puts("Must have at least:");
+            int a;
+            for (a = 0; a < NUM_ARGS_GENERATE; a++)
+            {
+                if (argumentsGenerate[a].mandatory)
+                {
+                    printf("\n\t%s or %s", argumentsGenerate[a].shortCode, argumentsGenerate[a].longCode);
+                }
+            }
+            printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
+            return EXIT_FAILURE;
+        }
+    }
+
+    if(!argumentsGenerate[G_DATATYPE].value)
+        argumentsGenerate[G_DATATYPE].value = "integer";
+
+    //Hold the dimension of the matrix in question
+    int dimX, dimY;
+    //casting command line argument to integer requires checking
+    dimX = atoi(argumentsGenerate[G_WIDTH].value);
+    dimY = atoi(argumentsGenerate[G_HEIGHT].value);
+    if (!dimX)
+    {
+        printf("%s is not a valid dimension, dimension must be an integer\n", argumentsGenerate[G_WIDTH].value);
+        return EXIT_FAILURE;
+    }
+    if (dimX <= 1)
+    {
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
+        return EXIT_FAILURE;
+    }
+
+    if (!dimY)
+    {
+        printf("%s is not a valid dimension, dimension must be an integer\n", argumentsGenerate[G_HEIGHT].value);
+        return EXIT_FAILURE;
+    }
+    if (dimY <= 1)
+    {
+        PRINT_ERROR_CODE(DIMENSION_ERROR);
+        return EXIT_FAILURE;
+    }
+
+    int lower, upper;
+    if (argumentsGenerate[G_LOWER].value)
+    {
+        lower = atoi(argumentsGenerate[G_LOWER].value);
+    }
+    else
+    {
+        lower = -100;
+    }
+
+    if (argumentsGenerate[G_UPPER].value)
+    {
+        upper = atoi(argumentsGenerate[G_UPPER].value);
+    }
+    else
+    {
+        upper = 100;
+    }
+
+    if (!strcmp(argumentsGenerate[G_DATATYPE].value, "float"))
+    {
+        floatMatrix m = DEFAULT_MATRIX;
+        MatrixError e;
+        e = matrixNullF(&m, dimX, dimY);
+        if (e.code != SUCCESS)
+        {
+            printError(e);
+            destroymF(&m);
+            return EXIT_FAILURE;
+        }
+
+        int x, y;
+        time_t t;
+        srand((unsigned) time(&t));
+
+        for (y = 0; y < dimY; y++)
+        {
+            for (x = 0; x < dimX; x++)
+            {
+                insertAtF(&m, (float)(lower + (rand() % upper)) + ((float)rand()/(float)RAND_MAX), x, y);
+            }
+        }
+        if (argumentsGenerate[G_OUTPUT].value)
+        {
+            FILE *fp = fopen(argumentsGenerate[G_OUTPUT].value, "w");
+            if (!fp)
+            {
+                PRINT_ERROR_CODE(FILE_IO_ERROR);
+                return EXIT_FAILURE;
+            }
+
+            char * strBuff = (char*)malloc(dimX*dimY*20*sizeof(char)+1);
+            strBuff[0] = '\0';
+            e = toStringF(strBuff, &m, dimX*dimY*20*+1);
+            if (e.code != SUCCESS)
+            {
+                printError(e);
+                free(strBuff);
+                destroymF(&m);
+                return EXIT_FAILURE;
+            }
+
+            fprintf(fp, "%s", strBuff);
+            fclose(fp);
+            free(strBuff);
+        }
+        else
+        {
+            printmF(&m);
+        }
+        destroymF(&m);
+    }
+    else if (!strcmp(argumentsGenerate[G_DATATYPE].value, "integer"))
+    {
+        intMatrix m = DEFAULT_MATRIX;
+        MatrixError e;
+        e = matrixNullI(&m, dimX, dimY);
+        if (e.code != SUCCESS)
+        {
+            printError(e);
+            destroymI(&m);
+            return EXIT_FAILURE;
+        }
+
+        int x, y;
+        time_t t;
+        srand((unsigned) time(&t));
+
+        for (y = 0; y < dimY; y++)
+        {
+            for (x = 0; x < dimX; x++)
+            {
+                insertAtI(&m, lower + (rand() % upper), x, y);
+            }
+        }
+        if (argumentsGenerate[G_OUTPUT].value)
+        {
+            FILE *fp = fopen(argumentsGenerate[G_OUTPUT].value, "w");
+            if (!fp)
+            {
+                PRINT_ERROR_CODE(FILE_IO_ERROR);
+                destroymI(&m);
+                return EXIT_FAILURE;
+            }
+
+            char * strBuff = (char*)malloc(dimX*dimY*20*sizeof(char)+1);
+            strBuff[0] = '\0';
+            e = toStringI(strBuff, &m, dimX*dimY*20*+1);
+            if (e.code != SUCCESS)
+            {
+                printError(e);
+                free(strBuff);
+                destroymI(&m);
+                return EXIT_FAILURE;
+            }
+
+            fprintf(fp, "%s", strBuff);
+            fclose(fp);
+            free(strBuff);
+        }
+        else
+        {
+            printmI(&m);
+        }
+        destroymI(&m);
+    }
+    else
+    {
+        printf("datatype must be either integer or float, %s was given\n", argumentsGenerate[G_DATATYPE].value);
+        puts(helpMessage);
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
+}
+
 int test(int argc)
 {
     //test does not take any command line arguments
@@ -907,6 +1170,9 @@ void getHelpMessage(char * dest, TOOL tool)
         lim = NUM_ARGS_MULTIPLY;
         args = argumentsMultiply;
         break;
+    case GENERATE :
+        lim = NUM_ARGS_GENERATE;
+        args = argumentsGenerate;
     case TEST :
         break;
     case NONE :
@@ -916,6 +1182,8 @@ void getHelpMessage(char * dest, TOOL tool)
         getHelpMessage(dest, TRANSPOSE);
         strcat(dest, "\nTool: Multiply\n");
         getHelpMessage(dest, MULTIPLY);
+        strcat(dest, "\nTool: Generate\n");
+        getHelpMessage(dest, GENERATE);
         return;
     }
     strcat(dest, "usage $ ./matrix ");
@@ -950,6 +1218,10 @@ void getHelpMessage(char * dest, TOOL tool)
         break;
     case MULTIPLY :
         strcat(dest, "   -t multiply | --tool multiply");
+        strcat(dest, "\n\t");
+        break;
+    case GENERATE :
+        strcat(dest, "   -t generate | --tool generate");
         strcat(dest, "\n\t");
         break;
     case TEST :
