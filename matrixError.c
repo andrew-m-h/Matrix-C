@@ -12,7 +12,8 @@ const char errors[NUM_ERRORS][200] =
     "Dimension error occurred when performing matrix operation\n\tLikely Cause: Take inverse, cofactor or determinant of non square matrix\n",
     "Buffer error occurred\n\tLikely Cause: String buffer not of sufficient length to represent matrix\n",
     "Failed to correctly perform fileIO\n",
-    "General Matrix Failure occurred\n"
+    "General Matrix Failure occurred\n",
+    "Incorrect arguments given to program\n"
 };
 
 MatrixError getError(const MatrixErrorCode e, const char* file, const int line, const char* func)

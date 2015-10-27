@@ -8,7 +8,7 @@ Created by Andrew M. Hall
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NUM_ERRORS 7
+#define NUM_ERRORS 8
 #define GET_ERROR(e) getError(e, __FILE__, __LINE__, __FUNCTION__)
 #define PRINT_ERROR_CODE(c) printError(getError(c, __FILE__, __LINE__, __FUNCTION__))
 
@@ -20,7 +20,8 @@ typedef enum
     DIMENSION_ERROR,
     BUFF_SIZE_ERROR,
     FILE_IO_ERROR,
-    FAILURE
+    FAILURE,
+    ARGUMENT_ERROR
 } MatrixErrorCode;
 
 typedef struct

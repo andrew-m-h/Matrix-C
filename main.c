@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
             if (i == argc-1)
             {
                 puts("--mode must be accompanied by a valid mode\n");
-                return EXIT_FAILURE;
+                return ARGUMENT_ERROR;
             }
             if (!strcmp(argv[i+1], "invert"))
             {
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
             {
                 puts("--mode must be accompanied by a valid mode\n");
                 puts(helpMessage);
-                return EXIT_FAILURE;
+                return ARGUMENT_ERROR;
             }
         }
     }
@@ -236,7 +236,7 @@ int invert(int argc, char* argv[])
         if (i+1 == argc && strcmp(argv[i], argumentsInvert[I_HELP].shortCode) && strcmp(argv[i], argumentsInvert[I_HELP].longCode))
         {
             printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
 
         /*
@@ -264,7 +264,7 @@ int invert(int argc, char* argv[])
                 and exit in error*/
                 printf("Invert does not accept the argument: %s\n", argv[i]);
                 puts(helpMessage);
-                return EXIT_FAILURE;
+                return ARGUMENT_ERROR;
             }
         }
     }
@@ -285,7 +285,7 @@ int invert(int argc, char* argv[])
                 }
             }
             printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
     }
 
@@ -296,12 +296,12 @@ int invert(int argc, char* argv[])
     if (!dim)
     {
         printf("%s is not a valid dimension, dimension must be an integer\n", argumentsInvert[I_DIMENSION].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
     if (dim <= 1)
     {
         PRINT_ERROR_CODE(DIMENSION_ERROR);
-        return EXIT_FAILURE;
+        return DIMENSION_ERROR;
     }
 
     //The input file pointer
@@ -310,7 +310,7 @@ int invert(int argc, char* argv[])
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsInvert[I_INPUT].value);
-        return EXIT_FAILURE;
+        return FILE_IO_ERROR;
     }
 
     //The input data read from the file and cast to a double for more precision
@@ -319,7 +319,7 @@ int invert(int argc, char* argv[])
     if (!data)
     {
         PRINT_ERROR_CODE(MEM_ALLOCATION_FAILURE);
-        return EXIT_FAILURE;
+        return MEM_ALLOCATION_FAILURE;
     }
 
     //Read data from file
@@ -339,7 +339,7 @@ int invert(int argc, char* argv[])
     {
         printError(e);
         free(data);
-        return EXIT_FAILURE;
+        return e.code;
     }
     free(data);
 
@@ -362,7 +362,7 @@ int invert(int argc, char* argv[])
     else
     {
         puts("parallel argument must be either \"yes\" or \"no\"");
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
 
     //If the --output flag is given, then the inverted matrix must be written to the specified output file
@@ -375,7 +375,7 @@ int invert(int argc, char* argv[])
             PRINT_ERROR_CODE(FILE_IO_ERROR);
             printf("Failed to create file %s\n", argumentsInvert[I_OUTPUT].value);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return FILE_IO_ERROR;
         }
 
         //inv will hold the inverted matrix.
@@ -387,7 +387,7 @@ int invert(int argc, char* argv[])
         {
             printError(e);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         if (para)
@@ -404,7 +404,7 @@ int invert(int argc, char* argv[])
             printError(e);
             destroymD(&m);
             destroymD(&inv);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         //matrix.h exports a 'to string' function, which nicly formats a matrix and places it into a string buffer
@@ -417,7 +417,7 @@ int invert(int argc, char* argv[])
             free(strBuff);
             destroymD(&inv);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         //write to file and destroy buffers and inv
@@ -434,7 +434,7 @@ int invert(int argc, char* argv[])
         {
             printError(e);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         //use appropriate invert function (as per --parallel)
@@ -452,7 +452,7 @@ int invert(int argc, char* argv[])
             printError(e);
             destroymD(&inv);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         fflush(stdout);
@@ -464,13 +464,13 @@ int invert(int argc, char* argv[])
             printf("\n%s", e.message);
             destroymD(&inv);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
         destroymD(&inv);
     }
 
     destroymD(&m);
-    return EXIT_SUCCESS;
+    return SUCCESS;
 }
 
 
@@ -490,7 +490,7 @@ int transpose(int argc, char* argv[])
         if (i+1 == argc && strcmp(argv[i], argumentsTranspose[T_HELP].shortCode) && strcmp(argv[i], argumentsTranspose[T_HELP].longCode))
         {
             printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
         //Find if the given flag matches a Transpose flag
         int a;
@@ -501,9 +501,8 @@ int transpose(int argc, char* argv[])
                 //Deal with the --help argument
                 if (argumentsTranspose[a].code == T_HELP)
                 {
-                    puts("This happened\n");
                     puts(helpMessage);
-                    return EXIT_SUCCESS;
+                    return SUCCESS;
                 }
                 argumentsTranspose[a].value = argv[i+1];
                 break;
@@ -513,7 +512,7 @@ int transpose(int argc, char* argv[])
                 //Deal with invalid argument being passed
                 printf("Transpose does not accept the argument: %s\n", argv[i]);
                 puts(helpMessage);
-                return EXIT_FAILURE;
+                return ARGUMENT_ERROR;
             }
         }
     }
@@ -533,7 +532,7 @@ int transpose(int argc, char* argv[])
                 }
             }
             printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
     }
 
@@ -545,18 +544,18 @@ int transpose(int argc, char* argv[])
     if (!width)
     {
         printf("%s is not a valid width, dimension must be an integer\n", argumentsTranspose[T_WIDTH].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
     else if (!height)
     {
         printf("%s is not a valid height, dimension must be an integer\n", argumentsTranspose[T_HEIGHT].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
 
     if (width < 1 || height < 1)
     {
         PRINT_ERROR_CODE(DIMENSION_ERROR);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
 
     //Deal with the input file
@@ -565,7 +564,7 @@ int transpose(int argc, char* argv[])
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsTranspose[T_INPUT].value);
-        return EXIT_FAILURE;
+        return FILE_IO_ERROR;
     }
 
     //the data stream for reading in data from the file
@@ -574,7 +573,7 @@ int transpose(int argc, char* argv[])
     if (!data)
     {
         PRINT_ERROR_CODE(MEM_ALLOCATION_FAILURE);
-        return EXIT_FAILURE;
+        return MEM_ALLOCATION_FAILURE;
     }
 
     //Read data from file
@@ -594,7 +593,7 @@ int transpose(int argc, char* argv[])
     {
         printError(e);
         free(data);
-        return EXIT_FAILURE;
+        return SUCCESS;
     }
     free(data);
 
@@ -608,7 +607,7 @@ int transpose(int argc, char* argv[])
             PRINT_ERROR_CODE(FILE_IO_ERROR);
             printf("Failed to create file %s\n", argumentsTranspose[T_OUTPUT].value);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return FILE_IO_ERROR;
         }
 
         //There is no option to parallelise transposition
@@ -623,7 +622,7 @@ int transpose(int argc, char* argv[])
             printError(e);
             free(strBuff);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         fprintf(out, "%s", strBuff);
@@ -641,14 +640,13 @@ int transpose(int argc, char* argv[])
         {
             printf("\n%s", e.message);
             destroymD(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
     }
 
     destroymD(&m);
-    return EXIT_SUCCESS;
+    return SUCCESS;
 }
-
 
 //Multiply tool
 int multiply(int argc, char* argv[])
@@ -666,7 +664,7 @@ int multiply(int argc, char* argv[])
         if (i+1 == argc && strcmp(argv[i], argumentsMultiply[M_HELP].shortCode) && strcmp(argv[i], argumentsMultiply[M_HELP].longCode))
         {
             printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
         int a;
         for (a = 0; a < NUM_ARGS_MULTIPLY; a++)
@@ -676,7 +674,7 @@ int multiply(int argc, char* argv[])
                 if (argumentsMultiply[a].code == M_HELP)
                 {
                     puts(helpMessage);
-                    return EXIT_SUCCESS;
+                    return SUCCESS;
                 }
                 argumentsMultiply[a].value = argv[i+1];
                 break;
@@ -685,7 +683,7 @@ int multiply(int argc, char* argv[])
             {
                 printf("Invert does not accept the argument: %s\n", argv[i]);
                 puts(helpMessage);
-                return EXIT_FAILURE;
+                return ARGUMENT_ERROR;
             }
         }
     }
@@ -704,7 +702,7 @@ int multiply(int argc, char* argv[])
                 }
             }
             printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
     }
 
@@ -716,18 +714,18 @@ int multiply(int argc, char* argv[])
     if (!width)
     {
         printf("%s is not a valid width, width must be an integer\n", argumentsMultiply[M_WIDTH].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
     else if (!height)
     {
         printf("%s is not a valid height, height must be an integer\n", argumentsMultiply[M_HEIGHT].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
 
     if (width < 1 || height < 1)
     {
         PRINT_ERROR_CODE(DIMENSION_ERROR);
-        return EXIT_FAILURE;
+        return DIMENSION_ERROR;
     }
 
     FILE * fp1 = fopen(argumentsMultiply[M_INPUT_ONE].value, "r");
@@ -736,13 +734,13 @@ int multiply(int argc, char* argv[])
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsMultiply[M_INPUT_ONE].value);
-        return EXIT_FAILURE;
+        return FILE_IO_ERROR;
     }
     if (!fp2)
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
         printf("could not open file: %s\n", argumentsMultiply[M_INPUT_TWO].value);
-        return EXIT_FAILURE;
+        return FILE_IO_ERROR;
     }
 
     double * data1 = (double*)malloc(width*height*sizeof(double));
@@ -751,7 +749,7 @@ int multiply(int argc, char* argv[])
     if (!data1 || !data2)
     {
         PRINT_ERROR_CODE(MEM_ALLOCATION_FAILURE);
-        return EXIT_FAILURE;
+        return MEM_ALLOCATION_FAILURE;
     }
 
     float num1, num2;
@@ -771,7 +769,7 @@ int multiply(int argc, char* argv[])
     {
         printError(e);
         free(data1);
-        return EXIT_FAILURE;
+        return e.code;
     }
     free(data1);
 
@@ -781,7 +779,7 @@ int multiply(int argc, char* argv[])
     {
         printError(e);
         free(data2);
-        return EXIT_FAILURE;
+        return e.code;
     }
     free(data2);
 
@@ -801,7 +799,7 @@ int multiply(int argc, char* argv[])
     else
     {
         puts("parallel argument must be either \"yes\" or \"no\"");
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
 
     if (argumentsMultiply[M_OUTPUT].value)
@@ -813,7 +811,7 @@ int multiply(int argc, char* argv[])
             printf("Failed to create file %s\n", argumentsMultiply[M_OUTPUT].value);
             destroymD(&m1);
             destroymD(&m2);
-            return EXIT_FAILURE;
+            return FILE_IO_ERROR;
         }
         doubleMatrix mult = DEFAULT_MATRIX;
         e = matrixNullD(&mult, height, height);
@@ -822,7 +820,7 @@ int multiply(int argc, char* argv[])
             printError(e);
             destroymD(&m1);
             destroymD(&m2);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         if (para)
@@ -840,7 +838,7 @@ int multiply(int argc, char* argv[])
             destroymD(&m1);
             destroymD(&m2);
             destroymD(&mult);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         char * strBuff = (char*)malloc(height*height*20*sizeof(char)+1);
@@ -853,7 +851,7 @@ int multiply(int argc, char* argv[])
             destroymD(&m1);
             destroymD(&m2);
             destroymD(&mult);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         fprintf(out, "%s", strBuff);
@@ -869,7 +867,7 @@ int multiply(int argc, char* argv[])
             printError(e);
             destroymD(&m1);
             destroymD(&m2);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         if (para)
@@ -887,7 +885,7 @@ int multiply(int argc, char* argv[])
             destroymD(&m1);
             destroymD(&m2);
             destroymD(&mult);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         fflush(stdout);
@@ -899,13 +897,13 @@ int multiply(int argc, char* argv[])
             destroymD(&mult);
             destroymD(&m1);
             destroymD(&m2);
-            return EXIT_FAILURE;
+            return e.code;
         }
         destroymD(&mult);
     }
     destroymD(&m1);
     destroymD(&m2);
-    return EXIT_SUCCESS;
+    return SUCCESS;
 }
 
 //Generate tool
@@ -925,7 +923,7 @@ int generate(int argc, char* argv[])
         if (i+1 == argc && strcmp(argv[i], argumentsGenerate[G_HELP].shortCode) && strcmp(argv[i], argumentsGenerate[G_HELP].longCode))
         {
             printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
 
         /*
@@ -942,7 +940,7 @@ int generate(int argc, char* argv[])
                 if (argumentsGenerate[a].code == G_HELP)
                 {
                     puts(helpMessage);
-                    return EXIT_SUCCESS;
+                    return SUCCESS;
                 }
                 argumentsGenerate[a].value = argv[i+1];
                 break;
@@ -953,7 +951,7 @@ int generate(int argc, char* argv[])
                 and exit in error*/
                 printf("Generate does not accept the argument: %s\n", argv[i]);
                 puts(helpMessage);
-                return EXIT_FAILURE;
+                return ARGUMENT_ERROR;
             }
         }
     }
@@ -974,7 +972,7 @@ int generate(int argc, char* argv[])
                 }
             }
             printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return EXIT_FAILURE;
+            return ARGUMENT_ERROR;
         }
     }
 
@@ -989,23 +987,23 @@ int generate(int argc, char* argv[])
     if (!dimX)
     {
         printf("%s is not a valid dimension, dimension must be an integer\n", argumentsGenerate[G_WIDTH].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
     if (dimX <= 1)
     {
         PRINT_ERROR_CODE(DIMENSION_ERROR);
-        return EXIT_FAILURE;
+        return DIMENSION_ERROR;
     }
 
     if (!dimY)
     {
         printf("%s is not a valid dimension, dimension must be an integer\n", argumentsGenerate[G_HEIGHT].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
     if (dimY <= 1)
     {
         PRINT_ERROR_CODE(DIMENSION_ERROR);
-        return EXIT_FAILURE;
+        return DIMENSION_ERROR;
     }
 
     int lower, upper;
@@ -1036,7 +1034,7 @@ int generate(int argc, char* argv[])
         {
             printError(e);
             destroymF(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         int x, y;
@@ -1056,7 +1054,7 @@ int generate(int argc, char* argv[])
             if (!fp)
             {
                 PRINT_ERROR_CODE(FILE_IO_ERROR);
-                return EXIT_FAILURE;
+                return FILE_IO_ERROR;
             }
 
             char * strBuff = (char*)malloc(dimX*dimY*20*sizeof(char)+1);
@@ -1067,7 +1065,7 @@ int generate(int argc, char* argv[])
                 printError(e);
                 free(strBuff);
                 destroymF(&m);
-                return EXIT_FAILURE;
+                return e.code;
             }
 
             fprintf(fp, "%s", strBuff);
@@ -1089,7 +1087,7 @@ int generate(int argc, char* argv[])
         {
             printError(e);
             destroymI(&m);
-            return EXIT_FAILURE;
+            return e.code;
         }
 
         int x, y;
@@ -1110,7 +1108,7 @@ int generate(int argc, char* argv[])
             {
                 PRINT_ERROR_CODE(FILE_IO_ERROR);
                 destroymI(&m);
-                return EXIT_FAILURE;
+                return FILE_IO_ERROR;
             }
 
             char * strBuff = (char*)malloc(dimX*dimY*20*sizeof(char)+1);
@@ -1121,7 +1119,7 @@ int generate(int argc, char* argv[])
                 printError(e);
                 free(strBuff);
                 destroymI(&m);
-                return EXIT_FAILURE;
+                return e.code;
             }
 
             fprintf(fp, "%s", strBuff);
@@ -1137,9 +1135,9 @@ int generate(int argc, char* argv[])
     else
     {
         printf("datatype must be either integer or float, %s was given\n", argumentsGenerate[G_DATATYPE].value);
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
-    return EXIT_SUCCESS;
+    return ARGUMENT_ERROR;
 }
 
 int test(int argc)
@@ -1148,11 +1146,11 @@ int test(int argc)
     if (argc > 3)
     {
         puts("unit-test does not take any command line arguments\n");
-        return EXIT_FAILURE;
+        return ARGUMENT_ERROR;
     }
     puts("Testing:");
     printf("Tests Passed: %d of %d\n", matrix_suite(), TEST_NUMBER);
-    return EXIT_SUCCESS;
+    return SUCCESS;
 }
 
 void getHelpMessage(char * dest, TOOL tool)

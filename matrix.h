@@ -38,10 +38,10 @@ typedef struct
 } intMatrix;
 
 //Personal preference and used through out this library
-typedef int BOOL;
-
-#define TRUE 1
-#define FALSE 0
+typedef enum {
+    FALSE = 0,
+    TRUE
+} BOOL;
 
 //Matrix constructors
 MatrixError matrixD(doubleMatrix * dest, const double * in_data, int in_width, int in_height);
