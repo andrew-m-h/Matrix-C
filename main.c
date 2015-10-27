@@ -1,6 +1,6 @@
 /*
 Created by Andrew M. Hall
-This program exports three command line tools that manipulate matrices from files.
+This program exports five command line tools that manipulate matrices from files.
 Invert:
     This tool inverts a matrix using cofactor expansion. Realistically, 13-14 is the absolute limit, though with more cores, the parallel nature of this
     program means that it can feasibly invert larger matrices.
@@ -8,6 +8,10 @@ Transpose:
     This tool transposes a matrix. This is a simple task and can be run on very large matrices in very little time.
 Multiply:
     This tool multiplies two matrices from two files. This can be used for large matrices, and uses POSIX threads to allow for arbitrarily large matrices to be multiplied
+Generate:
+    This tool generates an n x m random matrix. The output datatype can be specified, and upper and lower limits can be adjusted. This is useful for generating test data.
+Test:
+    This is not really a tool, but a test suit designed to make sure, each version of the library works as desired. This is implemented as a tool in order for it to be accessible to the user.
 */
 
 #include <stdio.h>
@@ -1133,7 +1137,6 @@ int generate(int argc, char* argv[])
     else
     {
         printf("datatype must be either integer or float, %s was given\n", argumentsGenerate[G_DATATYPE].value);
-        puts(helpMessage);
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
