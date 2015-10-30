@@ -63,7 +63,7 @@ To test the projecct, a test 5x5 matrix is provied in the file "matrix.txt". Run
 Remember, if your using code::blocks, copy matrix.txt into the directory of the binary.
 The appropriate output from these tests should be printeed to the terminal and written to the file matrix-output.txt:
 
-<table style="width:120pt">
+<table style="width:120pt" border="0">
 <tr><td>1</td>    <td>-8</td>	<td>9</td>	<td>7</td>	<td>17</td></tr>
 <tr><td>0</td>	<td>1</td>	<td>0</td>	<td>-4</td>	<td>-24</td></tr>
 <tr><td>0</td>	<td>0</td>	<td>1</td>	<td>-2</td>	<td>-15</td></tr>
