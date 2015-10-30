@@ -63,9 +63,11 @@ To test the projecct, a test 5x5 matrix is provied in the file "matrix.txt". Run
 Remember, if your using code::blocks, copy matrix.txt into the directory of the binary.
 The appropriate output from these tests should be printeed to the terminal and written to the file matrix-output.txt:
 
-1 -8 9 7 17
--0 1 -0 -4 -24
-0 -0 1 -2 -15
--0 0 -0 1 5
-0 -0 0 -0 1	
+<table style="width:120pt">
+<tr><td>1</td>    <td>-8</td>	<td>9</td>	<td>7</td>	<td>17</td></tr>
+<tr><td>0</td>	<td>1</td>	<td>0</td>	<td>-4</td>	<td>-24</td></tr>
+<tr><td>0</td>	<td>0</td>	<td>1</td>	<td>-2</td>	<td>-15</td></tr>
+<tr><td>0</td>	<td>0</td>	<td>0</td>	<td>1</td>	<td>5</td></tr>
+<tr><td>0</td>	<td>0</td>	<td>0</td>	<td>0</td>	<td>1</td></tr>
+</table>
 

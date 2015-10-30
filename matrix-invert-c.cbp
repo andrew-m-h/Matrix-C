@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="--tool generate  -x 5 -y 5 --datatype float -l -15 -u 15" />
+				<Option parameters="--tool generate -h" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>

@@ -53,6 +53,7 @@ MatrixError matrixNullD(doubleMatrix * dest, int in_width, int in_height);
 MatrixError matrixNullF(floatMatrix * dest, int in_width, int in_height);
 MatrixError matrixNullI(intMatrix * dest, int in_width, int in_height);
 
+//Copy constructor for matrix
 MatrixError matrixCopyConsD(doubleMatrix * dest, const doubleMatrix * src);
 MatrixError matrixCopyConsF(floatMatrix * dest, const floatMatrix * src);
 MatrixError matrixCopyConsI(intMatrix * dest, const intMatrix * src);
@@ -71,6 +72,10 @@ MatrixError matrixcpyI(intMatrix * dest, const intMatrix * src);
 MatrixError printmD(const doubleMatrix *a);
 MatrixError printmF(const floatMatrix *a);
 MatrixError printmI(const intMatrix *a);
+
+//Used to nicely represent floating point numbers
+void doubleToString(char * dest, double num);
+void floatToString(char * dest, float num);
 
 //Calculate the determinant of a matrix using a given row.
 double determinantD(const doubleMatrix *a, int row);

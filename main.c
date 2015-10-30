@@ -27,6 +27,7 @@ Test:
 #define NUM_ARGS_TRANSPOSE 5
 #define NUM_ARGS_MULTIPLY 7
 #define NUM_ARGS_GENERATE 7
+#define NUM_ARGS_DETERMINANT 3
 
 /*
 The layout of this main file, is designed to be easily extensible for adding new tools.
@@ -56,6 +57,7 @@ typedef enum
     TRANSPOSE,
     MULTIPLY,
     GENERATE,
+    DETERMINANT,
     TEST
 } TOOL;
 
@@ -64,6 +66,7 @@ int invert(int argc, char* argv[]);
 int transpose(int argc, char* argv[]);
 int multiply(int argc, char* argv[]);
 int generate(int argc, char* argv[]);
+int determinant(int argc, char* argv[]);
 int test(int argc);
 
 int main(int argc, char* argv[])
@@ -98,6 +101,9 @@ int main(int argc, char* argv[])
             else if(!strcmp(argv[i+1], "generate"))
             {
                 return generate(argc, argv);
+            }
+            else if (!strcmp(argv[i+1], "determinant")){
+                return determinant(argc, argv);
             }
             else if(!strcmp(argv[i+1], "test"))
             {
@@ -167,6 +173,13 @@ enum
     G_HELP
 };
 
+enum
+{
+    D_DIMENSION = 0,
+    D_INPUT,
+    D_HELP
+};
+
 //The argument struct, used to store information about each argument.
 typedef struct
 {
@@ -219,6 +232,13 @@ Argument argumentsGenerate[NUM_ARGS_GENERATE] =
     {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=G_HELP, .mandatory=FALSE, .value=NULL}
 };
 
+Argument argumentsDeterminant[NUM_ARGS_DETERMINANT] =
+{
+    {.longCode="--dimension", .shortCode="-d", .description="The dimension, n, of the input nxn matrix", .code=D_DIMENSION, .mandatory=TRUE, .value=NULL},
+    {.longCode="--input", .shortCode="-i", .description="The name of the input file for which to find the determinant", .code=I_INPUT, .mandatory=TRUE, .value=NULL},
+    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=I_HELP, .mandatory=FALSE, .value=NULL}
+};
+
 //Invert tool
 int invert(int argc, char* argv[])
 {
@@ -258,7 +278,7 @@ int invert(int argc, char* argv[])
                 argumentsInvert[a].value = argv[i+1];
                 break;
             }
-            else if (a == NUM_ARGS_TRANSPOSE - 1)
+            else if (a == NUM_ARGS_INVERT - 1)
             {
                 /*If an invalid flag is passed to a tool, the program should print out a help message,
                 and exit in error*/
@@ -314,7 +334,7 @@ int invert(int argc, char* argv[])
     }
 
     //The input data read from the file and cast to a double for more precision
-    double * data = (double*)malloc(dim*dim*sizeof(double));
+    double * data = (double*)calloc(dim*dim,sizeof(double));
 
     if (!data)
     {
@@ -568,7 +588,7 @@ int transpose(int argc, char* argv[])
     }
 
     //the data stream for reading in data from the file
-    double * data = (double*)malloc(width*height*sizeof(double));
+    double * data = (double*)calloc(width*height,sizeof(double));
 
     if (!data)
     {
@@ -743,8 +763,8 @@ int multiply(int argc, char* argv[])
         return FILE_IO_ERROR;
     }
 
-    double * data1 = (double*)malloc(width*height*sizeof(double));
-    double * data2 = (double*)malloc(width*height*sizeof(double));
+    double * data1 = (double*)calloc(width*height, sizeof(double));
+    double * data2 = (double*)calloc(width*height, sizeof(double));
 
     if (!data1 || !data2)
     {
@@ -910,7 +930,7 @@ int multiply(int argc, char* argv[])
 int generate(int argc, char* argv[])
 {
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
-    getHelpMessage(helpMessage, INVERT);
+    getHelpMessage(helpMessage, GENERATE);
     int i;
     //Iterate through the command line arguments, they come in pairs, --flag value
     for (i = 1; i < argc; i+=2)
@@ -1140,6 +1160,126 @@ int generate(int argc, char* argv[])
     return ARGUMENT_ERROR;
 }
 
+int determinant(int argc, char* argv[])
+{
+    char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
+    getHelpMessage(helpMessage, DETERMINANT);
+    int i;
+    //Iterate through the command line arguments, they come in pairs, --flag value
+    for (i = 1; i < argc; i+=2)
+    {
+        //Ignore the --mode flag, its already bean dealt with (if present)
+        if (!strcmp(argv[i], TOOL_CODE_LONG) || !strcmp(argv[i], TOOL_CODE_SHORT))
+            continue;
+
+        //Deal with --help flag being the last argument
+        if (i+1 == argc && strcmp(argv[i], argumentsDeterminant[D_HELP].shortCode) && strcmp(argv[i], argumentsDeterminant[D_HELP].longCode))
+        {
+            printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
+            return ARGUMENT_ERROR;
+        }
+
+        /*
+        Since C has no map, it is nessecairy to linear search through all possible arguments.
+        This is not a problem since the numbers are so small
+        */
+        int a;
+        for (a = 0; a < NUM_ARGS_DETERMINANT; a++)
+        {
+            if (!strcmp(argv[i], argumentsDeterminant[a].longCode) || !strcmp(argv[i], argumentsDeterminant[a].shortCode))
+            {
+                /*The help flag is a special unary argument. If present, the program should print out
+                The help message, and nothing more*/
+                if (argumentsDeterminant[a].code == D_HELP)
+                {
+                    puts(helpMessage);
+                    return EXIT_SUCCESS;
+                }
+                argumentsDeterminant[a].value = argv[i+1];
+                break;
+            }
+            else if (a == NUM_ARGS_DETERMINANT - 1)
+            {
+                /*If an invalid flag is passed to a tool, the program should print out a help message,
+                and exit in error*/
+                printf("Invert does not accept the argument: %s\n", argv[i]);
+                puts(helpMessage);
+                return ARGUMENT_ERROR;
+            }
+        }
+    }
+
+    for (i = 0; i < NUM_ARGS_DETERMINANT; i++)
+    {
+        //With all arguments processed, the program still needs to check if all mandatory arguments have been passed
+        //If they have not, the program should return help and exit in error
+        if (argumentsDeterminant[i].value == NULL && argumentsDeterminant[i].mandatory)
+        {
+            puts("Must have at least:");
+            int a;
+            for (a = 0; a < NUM_ARGS_DETERMINANT; a++)
+            {
+                if (argumentsDeterminant[a].mandatory)
+                {
+                    printf("\n\t%s or %s", argumentsDeterminant[a].shortCode, argumentsDeterminant[a].longCode);
+                }
+            }
+            printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
+            puts(helpMessage);
+            return ARGUMENT_ERROR;
+        }
+    }
+
+    int dim = atoi(argumentsDeterminant[D_DIMENSION].value);
+    if (!dim){
+        printf("Invalid dimension given %s\n", argumentsDeterminant[D_DIMENSION].value);
+        return ARGUMENT_ERROR;
+    } else if (dim <= 1){
+        printf("Dimension must be greater than 1, %d given\n", dim);
+        return DIMENSION_ERROR;
+    }
+
+    FILE * fp = fopen(argumentsDeterminant[D_INPUT].value, "r");
+
+    if (!fp){
+        PRINT_ERROR_CODE(FILE_IO_ERROR);
+        printf("could not open file: %s\n", argumentsDeterminant[D_INPUT].value);
+        return FILE_IO_ERROR;
+    }
+
+    double *data = (double*)calloc(dim*dim, sizeof(double));
+
+    if (!data){
+        PRINT_ERROR_CODE(MEM_ALLOCATION_FAILURE);
+        return MEM_ALLOCATION_FAILURE;
+    }
+
+    float num;
+    int count = 0;
+    while(count < dim*dim && fscanf(fp, "%f", &num))
+    {
+        data[count] = (double)num;
+        count++;
+    }
+    fclose(fp);
+
+    doubleMatrix m = DEFAULT_MATRIX;
+    MatrixError e;
+    e = matrixD(&m, data, dim, dim);
+
+    if (e.code != SUCCESS){
+        printError(e);
+        return e.code;
+    }
+
+    char strBuff[20] = { '\0' };
+    doubleToString(strBuff, determinantD(&m, 0));
+
+    printf("%s\n", strBuff);
+
+    return SUCCESS;
+}
+
 int test(int argc)
 {
     //test does not take any command line arguments
@@ -1174,6 +1314,11 @@ void getHelpMessage(char * dest, TOOL tool)
     case GENERATE :
         lim = NUM_ARGS_GENERATE;
         args = argumentsGenerate;
+        break;
+    case DETERMINANT :
+        lim = NUM_ARGS_DETERMINANT;
+        args = argumentsDeterminant;
+        break;
     case TEST :
         break;
     case NONE :
@@ -1185,6 +1330,8 @@ void getHelpMessage(char * dest, TOOL tool)
         getHelpMessage(dest, MULTIPLY);
         strcat(dest, "\nTool: Generate\n");
         getHelpMessage(dest, GENERATE);
+        strcat(dest, "\nTool: Determinant\n");
+        getHelpMessage(dest, DETERMINANT);
         return;
     }
     strcat(dest, "usage $ ./matrix ");
@@ -1223,6 +1370,10 @@ void getHelpMessage(char * dest, TOOL tool)
         break;
     case GENERATE :
         strcat(dest, "   -t generate | --tool generate");
+        strcat(dest, "\n\t");
+        break;
+    case DETERMINANT :
+        strcat(dest, "   -t determinant | --tool determinant");
         strcat(dest, "\n\t");
         break;
     case TEST :
