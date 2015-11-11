@@ -9,23 +9,15 @@ my_matrix = [
     5,  12,     9,  13,     5]
 
 main :: IO()
-main = do
-    mat <- c_matrix 5 5 my_matrix
-    inv <- invertI mat
+main =
+    withMatrix 5 5 my_matrix $ \mat -> do
+        inv <- invertI mat
 
-    _ <- printmI mat
-    _ <- printmD inv
+        _ <- printmI mat
+        _ <- printmD inv
 
-    tran <- transposeI mat
-    _ <- printmI tran
+        tran <- transposeI mat
+        _ <- printmI tran
 
-    determinantI mat >>= (putStrLn . show)
-
-    cof <- cofactorI mat
-
-    _ <- printmI cof
-
-    c_freeM mat
-    c_freeM tran
-    c_freeM inv
-    c_freeM cof
+        freeM tran
+        freeM inv

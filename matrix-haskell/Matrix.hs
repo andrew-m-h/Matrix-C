@@ -8,6 +8,10 @@ module Matrix (
   CFloat,
   CInt,
 
+  unCInt,
+  unCFloat,
+  unCDouble,
+
   transposeD,
   transposeF,
   transposeI,
@@ -41,14 +45,20 @@ module Matrix (
   freeM,
 
   c_matrix,
-  matrix,  
+  matrix,
+
+  withCMatrix,
+  withMatrix,
+
+  withCMatrixNull,
+  withMatrixNull
               ) where
 
 import Prelude (
   Show(..), Eq(..), Num(..), Enum(..), Bool(..), String, IO, Double, Float,
-  fromIntegral, otherwise, error, putStrLn, notElem, take,
-  replicate, length, not, takeWhile,
-  (*), (++), ($), (.), (>), (&&), )
+  otherwise, error, putStrLn, notElem, take,
+  replicate, length, not, takeWhile, fromIntegral,
+  (*), (++), ($), (.), (>), (&&))
 import HaskellMatrixError (
   createError, MatrixError(..), ErrorCode(..))
 import Data.Int (Int32, Int)
@@ -57,9 +67,9 @@ import Foreign (
   peekArray, pokeArray, mallocArray,
   free, alloca, copyArray)
 import Foreign.CStorable (CStorable(..))
-import Foreign.C.Types (CInt, CDouble, CFloat)
+import Foreign.C.Types (CInt(..), CDouble(..), CFloat(..))
 import GHC.Generics (Generic(..))
-import Control.Monad (Monad(..), when)
+import Control.Monad (Monad(..), when, liftM)
 import System.IO.Unsafe (unsafePerformIO)
 
 data C_Matrix a = C_Matrix {c_mData :: Ptr a, c_width, c_height :: CInt}
@@ -84,8 +94,6 @@ instance (Show a, Storable a) => Show (C_Matrix a) where
           | n == w -> (padRight 7 $ round 6 $ show x) ++ "\n" ++ prettyPrint 1 xs
           | otherwise -> (padRight 7 $ round 6 $ show x) ++ "    " ++ prettyPrint (succ n) xs
         [] -> ""
-
-
 
 
 data Matrix a = Matrix {mData :: Ptr a, width, height :: Int}
@@ -147,6 +155,15 @@ foreign import ccall "HaskellMatrix.h hs_cofactorF" c_cofactorF :: Ptr (C_Matrix
 foreign import ccall "HaskellMatrix.h hs_cofactorI" c_cofactorI :: Ptr (C_Matrix CInt) -> Ptr (C_Matrix CInt) -> IO Int32
 
 
+unCFloat :: CFloat -> Float
+unCFloat (CFloat a) = a
+
+unCDouble :: CDouble -> Double
+unCDouble (CDouble a) = a
+
+unCInt :: CInt -> Int 
+unCInt (CInt a) = fromIntegral a
+
 
 toCMatrix :: Matrix a -> C_Matrix a
 toCMatrix (Matrix p w h) = C_Matrix p (fromIntegral w) (fromIntegral h)
@@ -154,23 +171,23 @@ toCMatrix (Matrix p w h) = C_Matrix p (fromIntegral w) (fromIntegral h)
 toMatrix :: C_Matrix a -> Matrix a
 toMatrix (C_Matrix p w h) = Matrix p (fromIntegral w) (fromIntegral h)
 
-c_matrixNull :: (Storable a, Num a) => CInt -> CInt -> IO(C_Matrix a)
+c_matrixNull :: (Storable a) => CInt -> CInt -> IO(C_Matrix a)
 c_matrixNull w h = do
   p <- mallocArray (fromIntegral $ w * h)
   return $ C_Matrix p w h
 
-matrixNull :: (Storable a, Num a) => Int -> Int -> IO(Matrix a)
+matrixNull :: (Storable a) => Int -> Int -> IO(Matrix a)
 matrixNull w h = do
   p <- mallocArray (w * h)
   return $ Matrix p w h
 
-c_matrix :: (Storable a, Num a) => CInt -> CInt -> [a] -> IO(C_Matrix a)
+c_matrix :: (Storable a) => CInt -> CInt -> [a] -> IO(C_Matrix a)
 c_matrix  w h d = do
   p <- mallocArray (fromIntegral $ w * h)
   pokeArray p d
   return $ C_Matrix p w h
 
-matrix :: (Storable a, Num a) =>  Int -> Int -> [a] -> IO(Matrix a)
+matrix :: (Storable a) =>  Int -> Int -> [a] -> IO(Matrix a)
 matrix  w h d = do
   p <- mallocArray (w * h)
   pokeArray p d
@@ -196,90 +213,90 @@ c_freeM = free . c_mData
 freeM :: Matrix a -> IO()
 freeM = free . mData
 
-transposeD :: C_Matrix CDouble -> IO(C_Matrix CDouble)
+transposeD :: Matrix CDouble -> IO(Matrix CDouble)
 transposeD srcM =
   alloca $ \dest -> do
-    destM <- c_matrixCpy srcM
-    poke dest destM
+    destM <- matrixCpy srcM
+    poke dest $ toCMatrix destM
     c_transposeD dest
-    peek dest
+    liftM toMatrix (peek dest)
 
-transposeF :: C_Matrix CFloat -> IO(C_Matrix CFloat)
+transposeF :: Matrix CFloat -> IO(Matrix CFloat)
 transposeF srcM =
   alloca $ \dest -> do
-    destM <- c_matrixCpy srcM
-    poke dest destM
+    destM <- matrixCpy srcM
+    poke dest $ toCMatrix destM
     c_transposeF dest
-    peek dest
+    liftM toMatrix (peek dest)
 
-transposeI :: C_Matrix CInt -> IO(C_Matrix CInt)
+transposeI :: Matrix CInt -> IO(Matrix CInt)
 transposeI srcM =
   alloca $ \dest -> do
-    destM <- c_matrixCpy srcM
-    poke dest destM
+    destM <- matrixCpy srcM
+    poke dest $ toCMatrix destM
     c_transposeI dest
-    peek dest
+    liftM toMatrix (peek dest)
 
-invertD :: C_Matrix CDouble -> IO(C_Matrix CDouble)
+invertD :: Matrix CDouble -> IO(Matrix CDouble)
 invertD srcM =
   alloca $ \dest ->
     alloca $ \src -> do
-      destM <- c_matrixNull (c_width srcM) (c_height srcM)
+      destM <- matrixNull (width srcM) (height srcM)
       
-      poke dest destM
-      poke src srcM
+      poke dest $ toCMatrix destM
+      poke src $ toCMatrix srcM
 
       err <- c_invertD dest src >>= (return . createError . fromIntegral)
       when (eType err /= Success) (error $ message err)
 
-      peek dest
+      liftM toMatrix (peek dest)
 
-invertF :: C_Matrix CFloat -> IO(C_Matrix CDouble)
+invertF :: Matrix CFloat -> IO(Matrix CDouble)
 invertF srcM =
   alloca $ \dest ->
     alloca $ \src -> do
-      destM <- c_matrixNull (c_width srcM) (c_height srcM)
+      destM <- matrixNull (width srcM) (height srcM)
       
-      poke dest destM
-      poke src srcM
+      poke dest $ toCMatrix destM
+      poke src $ toCMatrix srcM
 
       err <- c_invertF dest src >>= (return . createError . fromIntegral)
       when (eType err /= Success) (error $ message err)
 
-      peek dest
+      liftM toMatrix (peek dest)
 
-invertI :: C_Matrix CInt -> IO(C_Matrix CDouble)
+invertI :: Matrix CInt -> IO(Matrix CDouble)
 invertI srcM =
   alloca $ \dest ->
     alloca $ \src -> do
-      destM <- c_matrixNull (c_width srcM) (c_height srcM)
+      destM <- matrixNull (width srcM) (height srcM)
       
-      poke dest destM
-      poke src srcM
+      poke dest $ toCMatrix destM
+      poke src $ toCMatrix srcM
 
       err <- c_invertI dest src >>= (return . createError . fromIntegral)
       when (eType err /= Success) (error $ message err)
 
-      peek dest
+      liftM toMatrix (peek dest)
 
-printmD :: C_Matrix CDouble -> IO(MatrixError)
+printmD :: Matrix CDouble -> IO(MatrixError)
 printmD mat = do
   alloca $ \p -> do
-    poke p mat
+    poke p $ toCMatrix mat
     code <- c_printmD p
     return $ createError $ fromIntegral code
 
-printmF :: C_Matrix CFloat -> IO(MatrixError)
+printmF :: Matrix CFloat -> IO(MatrixError)
 printmF mat = do
   alloca $ \p -> do
-    poke p mat
+    poke p $ toCMatrix mat
     code <- c_printmF p
     return $ createError $ fromIntegral code
 
-printmI :: C_Matrix CInt -> IO(MatrixError)
+printmI :: Matrix CInt -> IO(MatrixError)
 printmI mat = do
   alloca $ \p -> do
-    poke p mat
+    poke p $ toCMatrix mat
     code <- c_printmI p
     return $ createError $ fromIntegral code
 
@@ -342,3 +359,31 @@ cofactorI src =
 
       when (eType err /= Success) (error $ message err)
       peek destPtr
+
+withCMatrix :: (Storable a) => CInt -> CInt -> [a] -> (C_Matrix a -> IO b) -> IO b
+withCMatrix w h d f = do
+  mat <- c_matrix w h d
+  ret <- f mat
+  c_freeM mat
+  return ret
+
+withMatrix :: (Storable a) => Int -> Int -> [a] -> (Matrix a -> IO b) -> IO b
+withMatrix  w h d f = do
+  mat <- matrix w h d
+  ret <- f mat
+  freeM mat
+  return ret
+
+withCMatrixNull :: (Storable a) => CInt -> CInt -> (C_Matrix a -> IO b) -> IO b
+withCMatrixNull w h f = do
+  mat <- c_matrixNull w h 
+  ret <- f mat
+  c_freeM mat
+  return ret
+
+withMatrixNull :: (Storable a) => Int -> Int -> (Matrix a -> IO b) -> IO b
+withMatrixNull w h f = do
+  mat <- matrixNull w h
+  ret <- f mat 
+  freeM mat
+  return ret
