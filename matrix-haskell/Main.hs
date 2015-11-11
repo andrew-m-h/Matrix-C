@@ -26,5 +26,6 @@ main = do
     _ <- printmI cof
 
     c_freeM mat
+    c_freeM tran
     c_freeM inv
     c_freeM cof

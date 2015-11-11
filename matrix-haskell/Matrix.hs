@@ -34,6 +34,9 @@ module Matrix (
   c_matrixNull,
   matrixNull,
 
+  c_matrixCpy,
+  matrixCpy,
+
   c_freeM,
   freeM,
 
@@ -52,7 +55,7 @@ import Data.Int (Int32, Int)
 import Foreign (
   Storable(..), Ptr,
   peekArray, pokeArray, mallocArray,
-  free, alloca)
+  free, alloca, copyArray)
 import Foreign.CStorable (CStorable(..))
 import Foreign.C.Types (CInt, CDouble, CFloat)
 import GHC.Generics (Generic(..))
@@ -167,11 +170,25 @@ c_matrix  w h d = do
   pokeArray p d
   return $ C_Matrix p w h
 
-matrix :: (Storable a, Num a)=>  Int -> Int -> [a] -> IO(Matrix a)
+matrix :: (Storable a, Num a) =>  Int -> Int -> [a] -> IO(Matrix a)
 matrix  w h d = do
   p <- mallocArray (w * h)
   pokeArray p d
   return $ Matrix p w h
+
+matrixCpy :: (Storable a) => Matrix a -> IO(Matrix a)
+matrixCpy (Matrix p w h) = do
+  let size = w * h
+  newPtr <- mallocArray size
+  copyArray newPtr p size
+  return $ Matrix newPtr w h
+
+c_matrixCpy :: (Storable a) => C_Matrix a -> IO(C_Matrix a)
+c_matrixCpy (C_Matrix p w h) = do
+  let size = fromIntegral $ w * h
+  newPtr <- mallocArray size 
+  copyArray newPtr p size
+  return $ C_Matrix newPtr w h
 
 c_freeM :: C_Matrix a -> IO()
 c_freeM = free . c_mData
@@ -180,25 +197,28 @@ freeM :: Matrix a -> IO()
 freeM = free . mData
 
 transposeD :: C_Matrix CDouble -> IO(C_Matrix CDouble)
-transposeD mat =
-  alloca $ \ptr -> do
-    poke ptr mat
-    c_transposeD ptr
-    peek ptr
+transposeD srcM =
+  alloca $ \dest -> do
+    destM <- c_matrixCpy srcM
+    poke dest destM
+    c_transposeD dest
+    peek dest
 
 transposeF :: C_Matrix CFloat -> IO(C_Matrix CFloat)
-transposeF mat =
-  alloca $ \ptr -> do
-    poke ptr mat
-    c_transposeF ptr
-    peek ptr
+transposeF srcM =
+  alloca $ \dest -> do
+    destM <- c_matrixCpy srcM
+    poke dest destM
+    c_transposeF dest
+    peek dest
 
 transposeI :: C_Matrix CInt -> IO(C_Matrix CInt)
-transposeI mat =
-  alloca $ \ptr -> do
-    poke ptr mat
-    c_transposeI ptr
-    peek ptr
+transposeI srcM =
+  alloca $ \dest -> do
+    destM <- c_matrixCpy srcM
+    poke dest destM
+    c_transposeI dest
+    peek dest
 
 invertD :: C_Matrix CDouble -> IO(C_Matrix CDouble)
 invertD srcM =
