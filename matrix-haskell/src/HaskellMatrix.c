@@ -59,3 +59,29 @@ int hs_cofactorF(floatMatrix * dest, const floatMatrix *a){
 int hs_cofactorI(intMatrix * dest, const intMatrix *a){
 	return cofactorI(dest, a).code;
 }
+
+int hs_multiplyD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b){
+	return multiplyD(dest, a, b).code;
+}
+
+int hs_multiplyF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b){
+	return multiplyF(dest, a, b).code;
+}
+
+int hs_multiplyI(intMatrix *dest, const intMatrix *a, const intMatrix *b){
+	return multiplyI(dest, a, b).code;
+}
+
+double hs_dotProductD(const doubleMatrix *a, const doubleMatrix *b){
+	return hs_dotProductD(a, b);
+}
+
+float hs_dotProductF(const floatMatrix *a, const floatMatrix *b){
+	return hs_dotProductF(a, b);
+}
+
+int hs_dotProductI(const intMatrix *a, const intMatrix *b){
+	return hs_dotProductI(a, b);
+}
+
+

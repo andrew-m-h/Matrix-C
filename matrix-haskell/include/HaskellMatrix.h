@@ -24,4 +24,8 @@ int hs_cofactorD(doubleMatrix * dest, const doubleMatrix *a);
 int hs_cofactorF(floatMatrix * dest, const floatMatrix *a);
 int hs_cofactorI(intMatrix * dest, const intMatrix *a);
 
+double hs_dotProductD(const doubleMatrix *a, const doubleMatrix *b);
+float hs_dotProductF(const floatMatrix *a, const floatMatrix *b);
+int hs_dotProductI(const intMatrix *a, const intMatrix *b);
+
 #endif

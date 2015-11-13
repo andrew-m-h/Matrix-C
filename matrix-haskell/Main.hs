@@ -11,13 +11,22 @@ my_matrix = [
 main :: IO()
 main =
     withMatrix 5 5 my_matrix $ \mat -> do
-        inv <- invertI mat
-
+        putStrLn "The original Matrix, M:"
         _ <- printmI mat
-        _ <- printmD inv
 
         tran <- transposeI mat
+        putStrLn "M transposed:"
         _ <- printmI tran
 
+        inv <- invertI mat
+        putStrLn "M inverted:"
+        _ <- printmD inv
+
+        withMatrix 5 5 (map fromIntegral my_matrix) $ \tmp -> do
+            mult <- multiplyD tmp inv
+            putStrLn "inverse(M) * M:"
+            _ <- printmD mult
+            freeM mult
+            
         freeM tran
         freeM inv
