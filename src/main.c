@@ -1065,7 +1065,7 @@ int generate(int argc, char* argv[])
         {
             for (x = 0; x < dimX; x++)
             {
-                insertAtF(&m, (float)(lower + (rand() % upper)) + ((float)rand()/(float)RAND_MAX), x, y);
+                insertAtF(&m, (float)(lower + (rand() % (upper - lower)) + ((float)rand()/(float)RAND_MAX)), x, y);
             }
         }
         if (argumentsGenerate[G_OUTPUT].value)
@@ -1118,7 +1118,7 @@ int generate(int argc, char* argv[])
         {
             for (x = 0; x < dimX; x++)
             {
-                insertAtI(&m, lower + (rand() % upper), x, y);
+                insertAtI(&m, lower + (rand() % (upper - lower)), x, y);
             }
         }
         if (argumentsGenerate[G_OUTPUT].value)

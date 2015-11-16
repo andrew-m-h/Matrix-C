@@ -41,6 +41,20 @@ This tool transposes an nxm matrix and outputs the resulting matrix either to st
         Help: This prints a help message for the invert tool
         Tool: The tool flag must specify that you wish to use the transpose tool, the default tool is invert
 
+Tool: Generate\
+This tool generates an nxm matrix of numbers with in a given range of a certain datatype. The output can be written to a file or the stdout.
+
+    $ matrix -x | --width    -y | --height    [-d | --datatype]    [-l | --lower]    [-u | --upper] [-o | --output]    [-h | --help]    -t generate | --tool generate
+	-x, --width: The width, x, of the output x by y matrix. x must be an integer
+	-y, --height: The height, y, of the output x by y matrix. y must be an integer
+	-d, --datatype: Define if only integral or floating values should be returned (integer or float) (default integer)
+	-l, --lower: The lowest value with which to fill the matrix (default -100)
+	-u, --upper: The greatest value with which to fill the matrix (default 100)
+	-o, --output: The name of a file which the matrix will be written to (default stdout)
+	-h, --help: Display help message
+	-t, --tool: choose which tool to utilise, invert, transpose or multiply (default invert)
+
+
 ### Input File
 The input file represents a stream of numbers, which will be read, left to right, top to bottom into the matrix of given dimension (remembering that only square matricies are invertable). This means that the input file can be a list of space seperated numbers, tab seperated with newlines or any mixture.
 
