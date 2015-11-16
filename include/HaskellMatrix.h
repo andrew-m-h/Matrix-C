@@ -3,6 +3,7 @@
 
 #include "matrix.h"
 #include "matrixError.h"
+#include "matrix-test.h"
 
 MatrixErrorCode hs_invertD(doubleMatrix * dest, const doubleMatrix * src);
 MatrixErrorCode hs_invertF(doubleMatrix * dest, const floatMatrix * src);
@@ -27,5 +28,20 @@ int hs_cofactorI(intMatrix * dest, const intMatrix *a);
 double hs_dotProductD(const doubleMatrix *a, const doubleMatrix *b);
 float hs_dotProductF(const floatMatrix *a, const floatMatrix *b);
 int hs_dotProductI(const intMatrix *a, const intMatrix *b);
+
+int hs_crossProductD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b);
+int hs_crossProductF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b);
+int hs_crossProductI(intMatrix *dest, const intMatrix *a, const intMatrix *b);
+
+int hs_paraCofactorD(doubleMatrix * dest, const doubleMatrix *a);
+int hs_paraCofactorF(floatMatrix * dest, const floatMatrix *a);
+int hs_paraCofactorI(intMatrix * dest, const intMatrix *a);
+
+int hs_stdCofactorD(doubleMatrix * dest, const doubleMatrix *a);
+int hs_stdCofactorF(floatMatrix * dest, const floatMatrix *a);
+int hs_stdCofactorI(intMatrix * dest, const intMatrix *a);
+
+int hs_matrix_suite(void);
+
 
 #endif

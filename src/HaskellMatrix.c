@@ -84,4 +84,41 @@ int hs_dotProductI(const intMatrix *a, const intMatrix *b){
 	return hs_dotProductI(a, b);
 }
 
+int hs_matrix_suite(){
+	return matrix_suite();
+}
 
+int hs_crossProductD(doubleMatrix *dest, const doubleMatrix *a, const doubleMatrix *b){
+	return crossProductD(dest, a, b).code;
+}
+
+int hs_crossProductF(floatMatrix *dest, const floatMatrix *a, const floatMatrix *b){
+	return crossProductF(dest, a, b).code;
+}
+
+int hs_crossProductI(intMatrix *dest, const intMatrix *a, const intMatrix *b){
+	return crossProductI(dest, a, b).code;
+}
+
+int hs_paraCofactorD(doubleMatrix * dest, const doubleMatrix *a){
+	return paraCofactorD(dest, a).code;
+}
+
+int hs_paraCofactorF(floatMatrix * dest, const floatMatrix *a){
+	return paraCofactorF(dest, a).code;
+}
+
+int hs_paraCofactorI(intMatrix * dest, const intMatrix *a){
+	return paraCofactorI(dest, a).code;
+}
+
+int hs_stdCofactorD(doubleMatrix * dest, const doubleMatrix *a){
+	return stdCofactorD(dest, a).code;
+}
+int hs_stdCofactorF(floatMatrix * dest, const floatMatrix *a){
+	return stdCofactorF(dest, a).code;
+}
+
+int hs_stdCofactorI(intMatrix * dest, const intMatrix *a){
+	return stdCofactorI(dest, a).code;
+}

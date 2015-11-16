@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module HaskellMatrixError (
+
+module Matrix.HaskellMatrixError (
 	createError,
         MatrixError(..),
         ErrorCode(..),

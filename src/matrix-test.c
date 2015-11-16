@@ -607,9 +607,11 @@ TEST(test_cofactor)
         2,   0,  -2,
         0,   1,   1
     };
+
     doubleMatrix d = DEFAULT_MATRIX;
     floatMatrix f = DEFAULT_MATRIX;
     intMatrix i = DEFAULT_MATRIX;
+
     doubleMatrix ansD = DEFAULT_MATRIX;
     floatMatrix ansF = DEFAULT_MATRIX;
     intMatrix ansI = DEFAULT_MATRIX;
@@ -860,6 +862,15 @@ TEST(test_invert)
             }
         }
     }
+    destroymD(&d);
+    destroymF(&f);
+    destroymI(&i);
+
+    destroymD(&ansD);
+    destroymD(&ansF);
+    destroymD(&ansI);
+
+    destroymD(&res);
 
     return TEST_SUCCESS;
 }
@@ -1401,7 +1412,9 @@ TEST(matrix_suite)
     RUN_TEST("Determinant", test_determinant(), count_passed);
     RUN_TEST("Matrix Comparison", test_matrix_comparison(), count_passed);
     RUN_TEST("Matrix Transpose", test_transpose(), count_passed);
+
     RUN_TEST("Matrix Cofactor", test_cofactor(), count_passed);
+
     RUN_TEST("Adjoint", test_adjoint(), count_passed);
     RUN_TEST("Invert", test_invert(), count_passed);
     RUN_TEST("Scalar Multiplication", test_scalar_multiply(), count_passed);

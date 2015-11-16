@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="--tool generate -h" />
+				<Option parameters="--tool test" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -33,21 +33,21 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="main.c">
+		<Unit filename="include/matrix-test.h" />
+		<Unit filename="include/matrix.h" />
+		<Unit filename="include/matrixError.h" />
+		<Unit filename="src/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="matrix-test.c">
+		<Unit filename="src/matrix-test.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="matrix-test.h" />
-		<Unit filename="matrix.c">
+		<Unit filename="src/matrix.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="matrix.h" />
-		<Unit filename="matrixError.c">
+		<Unit filename="src/matrixError.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="matrixError.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

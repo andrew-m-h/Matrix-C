@@ -1191,7 +1191,7 @@ void * cofactorThreadD(void * m)
         doubleMatrix det = DEFAULT_MATRIX;
         MatrixError e = matrixNullD(&det, s-1, s-1);
         if (e.code != SUCCESS)
-            pthread_exit((void*)e.code);
+            return (void*)e.code;
 
         int ycount = 0;
         int ydet;
@@ -1222,7 +1222,7 @@ void * cofactorThreadD(void * m)
         }
         destroymD(&det);
     }
-    pthread_exit(NULL);
+    return (NULL);
 }
 
 MatrixError paraCofactorD(doubleMatrix * dest, const doubleMatrix *a)
@@ -1320,7 +1320,7 @@ void * cofactorThreadF(void * m)
         floatMatrix det = DEFAULT_MATRIX;
         MatrixError e = matrixNullF(&det, s-1, s-1);
         if (e.code != SUCCESS)
-            pthread_exit((void*)e.code);
+            return (void*)e.code;
         int ycount = 0;
         int ydet;
         for (ydet = 0; ydet < s; ydet++)
@@ -1350,7 +1350,7 @@ void * cofactorThreadF(void * m)
         }
         destroymF(&det);
     }
-    pthread_exit(NULL);
+    return NULL;
 }
 
 MatrixError paraCofactorF(floatMatrix * dest, const floatMatrix *a)
@@ -1450,7 +1450,7 @@ void * cofactorThreadI(void * m)
         intMatrix det = DEFAULT_MATRIX;
         MatrixError e = matrixNullI(&det, s-1, s-1);
         if (e.code != SUCCESS)
-            pthread_exit((void*)e.code);
+            return (void*)e.code;
 
         int ycount = 0;
         int ydet;
@@ -1481,7 +1481,7 @@ void * cofactorThreadI(void * m)
         }
         destroymI(&det);
     }
-    pthread_exit(NULL);
+    return NULL;
 }
 
 MatrixError paraCofactorI(intMatrix * dest, const intMatrix *a)
