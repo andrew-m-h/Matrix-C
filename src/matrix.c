@@ -7,6 +7,7 @@ Created by Andrew M. Hall
 #include <stdio.h>
 #include <pthread.h>
 
+
 //PThread - cofactor
 typedef struct
 {

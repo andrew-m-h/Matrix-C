@@ -1,5 +1,5 @@
 matrix:
-	gcc -Wall -s -O3 -fexceptions -pthread -I include/ -o matrix src/main.c src/matrix.c src/matrixError.c src/matrix-test.c
+	gcc -Wall -s -O3 -fexceptions -pthread -I include/ -o matrix src/main.c src/matrix.c src/matrixError.c src/matrix-test.c src/parse.c
 	strip matrix
 
 check-syntax:

@@ -19,6 +19,10 @@ module Matrix.MatrixForeign (
   invertF,
   invertI,
 
+  stdInvertD,
+  stdInvertF,
+  stdInvertI,
+
   printmD,
   printmF,
   printmI,
@@ -43,6 +47,10 @@ module Matrix.MatrixForeign (
   multiplyF,
   multiplyI,
 
+  stdMultiplyD,
+  stdMultiplyF,
+  stdMultiplyI,
+
   dotProductD,
   dotProductF,
   dotProductI,
@@ -56,7 +64,7 @@ module Matrix.MatrixForeign (
 import Prelude (
   Show(..), Eq(..), Num(..), Enum(..), Bool(..), Functor(..), Integral(..),
   String, IO, Double, Float, Maybe(..),
-  otherwise, error, putStrLn, notElem, take, map, id, round,
+  otherwise, error, notElem, take, map, id, round,
   replicate, length, not, takeWhile, fromIntegral, undefined,
   (*), (++), ($), (.), (>), (&&))
 import Matrix.Types (
@@ -81,6 +89,10 @@ foreign import ccall "HaskellMatrix.h hs_transposeI" hs_transposeI :: Ptr (C_Mat
 foreign import ccall "HaskellMatrix.h hs_invertD" hs_invertD :: Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CDouble) -> IO Int
 foreign import ccall "HaskellMatrix.h hs_invertF" hs_invertF :: Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CFloat) -> IO Int
 foreign import ccall "HaskellMatrix.h hs_invertI" hs_invertI :: Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CInt) -> IO Int
+
+foreign import ccall "HaskellMatrix.h hs_stdInvertD" hs_stdInvertD :: Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CDouble) -> IO Int
+foreign import ccall "HaskellMatrix.h hs_stdInvertF" hs_stdInvertF :: Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CFloat) -> IO Int
+foreign import ccall "HaskellMatrix.h hs_stdInvertI" hs_stdInvertI :: Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CInt) -> IO Int
 
 foreign import ccall "HaskellMatrix.h hs_printmD" hs_printmD :: Ptr (C_Matrix CDouble) -> IO Int
 foreign import ccall "HaskellMatrix.h hs_printmF" hs_printmF :: Ptr (C_Matrix CFloat) -> IO Int
@@ -114,7 +126,13 @@ foreign import ccall "HaskellMatrix.h hs_crossProductD" hs_crossProductD :: Ptr 
 foreign import ccall "HaskellMatrix.h hs_crossProductF" hs_crossProductF :: Ptr (C_Vector CFloat) -> Ptr (C_Vector CFloat) -> Ptr (C_Vector CFloat) -> IO Int
 foreign import ccall "HaskellMatrix.h hs_crossProductI" hs_crossProductI :: Ptr (C_Vector CInt) -> Ptr (C_Vector CInt) -> Ptr (C_Vector CInt) -> IO Int
 
+foreign import ccall "HaskellMatrix.h hs_stdMultiplyD" hs_stdMultiplyD :: Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CDouble) -> Ptr (C_Matrix CDouble) -> IO Int
+foreign import ccall "HaskellMatrix.h hs_stdMultiplyF" hs_stdMultiplyF :: Ptr (C_Matrix CFloat) -> Ptr (C_Matrix CFloat) -> Ptr (C_Matrix CFloat) -> IO Int
+foreign import ccall "HaskellMatrix.h hs_stdMultiplyI" hs_stdMultiplyI :: Ptr (C_Matrix CInt) -> Ptr (C_Matrix CInt) -> Ptr (C_Matrix CInt) -> IO Int
+
 foreign import ccall "HaskellMatrix.h hs_matrix_suite" test :: IO(Int)
+
+
 
 matrixNull :: (Storable a, Integral b) => b -> b -> IO(Matrix a b)
 matrixNull w h = do
@@ -128,14 +146,16 @@ vectorNull h = do
 
 matrix :: (Storable a, Integral b) =>  b -> b -> [a] -> IO(Matrix a b)
 matrix  w h d = do
-  p <- mallocArray $ fromIntegral $ w * h
-  pokeArray p d
+  let size = fromIntegral $ w * h
+  p <- mallocArray size
+  pokeArray p (take size d)
   return $ Matrix p w h
 
 vector :: (Storable a, Num b, Integral b) => b -> [a] -> IO(Vector a b)
 vector h arr = do
-  p <- mallocArray $ fromIntegral h
-  pokeArray p arr
+  let size = fromIntegral h
+  p <- mallocArray size
+  pokeArray p (take size arr)
   return $ Vector' p 1 h
 
 matrixCpy :: (Storable a, Integral b) => Matrix a b -> IO(Matrix a b)
@@ -163,7 +183,9 @@ c_transposeD srcM =
   alloca $ \dest -> do
     destM <- matrixCpy srcM
     poke dest destM
+
     hs_transposeD dest
+
     peek dest
 
 c_transposeF :: C_Matrix CFloat -> IO(C_Matrix CFloat)
@@ -242,6 +264,58 @@ invertF srcM = liftM fromCMatrix (c_invertF $ toCMatrix srcM)
 
 invertI :: (Integral b) => Matrix CInt b -> IO(Matrix CDouble b)
 invertI srcM = liftM fromCMatrix (c_invertI $ toCMatrix srcM)
+
+
+c_stdInvertD :: C_Matrix CDouble -> IO(C_Matrix CDouble)
+c_stdInvertD srcM =
+  alloca $ \dest ->
+    alloca $ \src -> do
+      destM <- matrixNull (width srcM) (height srcM)
+
+      poke dest destM
+      poke src srcM
+
+      err <- hs_stdInvertD dest src >>= (return . createError . fromIntegral)
+      when (eType err /= Success) (error $ message err)
+
+      peek dest
+
+c_stdInvertF :: C_Matrix CFloat -> IO(C_Matrix CDouble)
+c_stdInvertF srcM =
+  alloca $ \dest ->
+    alloca $ \src -> do
+      destM <- matrixNull (width srcM) (height srcM)
+
+      poke dest destM
+      poke src srcM
+
+      err <- hs_stdInvertF dest src >>= (return . createError . fromIntegral)
+      when (eType err /= Success) (error $ message err)
+
+      peek dest
+
+c_stdInvertI :: C_Matrix CInt -> IO(C_Matrix CDouble)
+c_stdInvertI srcM =
+  alloca $ \dest ->
+    alloca $ \src -> do
+      destM <- matrixNull (width srcM) (height srcM)
+
+      poke dest destM
+      poke src srcM
+
+      err <- hs_stdInvertI dest src >>= (return . createError . fromIntegral)
+      when (eType err /= Success) (error $ message err)
+
+      peek dest
+
+stdInvertD :: (Integral b) => Matrix CDouble b -> IO(Matrix CDouble b)
+stdInvertD srcM = liftM fromCMatrix (c_stdInvertD $ toCMatrix srcM)
+
+stdInvertF :: (Integral b) => Matrix CFloat b -> IO(Matrix CDouble b)
+stdInvertF srcM = liftM fromCMatrix (c_stdInvertF $ toCMatrix srcM)
+
+stdInvertI :: (Integral b) => Matrix CInt b -> IO(Matrix CDouble b)
+stdInvertI srcM = liftM fromCMatrix (c_stdInvertI $ toCMatrix srcM)
 
 c_printmD :: C_Matrix CDouble -> IO(MatrixError)
 c_printmD mat = do
@@ -399,6 +473,72 @@ c_multiplyI aM bM =
 
         peek dest
 
+multiplyD :: (Integral b) => Matrix CDouble b -> Matrix CDouble b -> IO(Matrix CDouble b)
+multiplyD aM bM = liftM fromCMatrix (c_multiplyD (toCMatrix aM) (toCMatrix bM))
+
+multiplyF :: (Integral b) => Matrix CFloat b -> Matrix CFloat b -> IO(Matrix CFloat b)
+multiplyF aM bM = liftM fromCMatrix (c_multiplyF (toCMatrix aM) (toCMatrix bM))
+
+multiplyI :: (Integral b) => Matrix CInt b -> Matrix CInt b -> IO(Matrix CInt b)
+multiplyI aM bM = liftM fromCMatrix (c_multiplyI (toCMatrix aM) (toCMatrix bM))
+
+c_stdMultiplyD :: C_Matrix CDouble -> C_Matrix CDouble -> IO(C_Matrix CDouble)
+c_stdMultiplyD aM bM =
+  alloca $ \dest ->
+    alloca $ \a ->
+      alloca $ \b -> do
+        destM <- matrixNull (height aM) (width bM)
+
+        poke dest destM
+        poke a aM
+        poke b bM
+
+        err <- (hs_stdMultiplyD dest a b) >>= (return . createError . fromIntegral)
+        when (eType err /= Success) (error $ message err)
+
+        peek dest
+
+c_stdMultiplyF :: C_Matrix CFloat -> C_Matrix CFloat -> IO(C_Matrix CFloat)
+c_stdMultiplyF aM bM =
+  alloca $ \dest ->
+    alloca $ \a ->
+      alloca $ \b -> do
+        destM <- matrixNull (height aM) (width bM)
+
+        poke dest destM
+        poke a aM
+        poke b bM
+
+        err <- (hs_stdMultiplyF dest a b) >>= (return . createError . fromIntegral)
+        when (eType err /= Success) (error $ message err)
+
+        peek dest
+
+c_stdMultiplyI :: C_Matrix CInt -> C_Matrix CInt -> IO(C_Matrix CInt)
+c_stdMultiplyI aM bM =
+  alloca $ \dest ->
+    alloca $ \a ->
+      alloca $ \b -> do
+        destM <- matrixNull (height aM) (width bM)
+
+        poke dest destM
+        poke a aM
+        poke b bM
+
+        err <- (hs_stdMultiplyI dest a b) >>= (return . createError . fromIntegral)
+        when (eType err /= Success) (error $ message err)
+
+        peek dest
+
+stdMultiplyD :: (Integral b) => Matrix CDouble b -> Matrix CDouble b -> IO(Matrix CDouble b)
+stdMultiplyD aM bM = liftM fromCMatrix (c_stdMultiplyD (toCMatrix aM) (toCMatrix bM))
+
+stdMultiplyF :: (Integral b) => Matrix CFloat b -> Matrix CFloat b -> IO(Matrix CFloat b)
+stdMultiplyF aM bM = liftM fromCMatrix (c_stdMultiplyF (toCMatrix aM) (toCMatrix bM))
+
+stdMultiplyI :: (Integral b) => Matrix CInt b -> Matrix CInt b -> IO(Matrix CInt b)
+stdMultiplyI aM bM = liftM fromCMatrix (c_stdMultiplyI (toCMatrix aM) (toCMatrix bM))
+
 c_stdCofactorD :: C_Matrix CDouble -> IO(C_Matrix CDouble)
 c_stdCofactorD src = 
   alloca $ \srcPtr -> 
@@ -500,15 +640,6 @@ paraCofactorF src = liftM fromCMatrix (c_paraCofactorF $ toCMatrix src)
 
 paraCofactorI :: (Integral b) => Matrix CInt b -> IO (Matrix CInt b)
 paraCofactorI src = liftM fromCMatrix (c_paraCofactorI $ toCMatrix src)
-
-multiplyD :: (Integral b) => Matrix CDouble b -> Matrix CDouble b -> IO(Matrix CDouble b)
-multiplyD aM bM = liftM fromCMatrix (c_multiplyD (toCMatrix aM) (toCMatrix bM))
-
-multiplyF :: (Integral b) => Matrix CFloat b -> Matrix CFloat b -> IO(Matrix CFloat b)
-multiplyF aM bM = liftM fromCMatrix (c_multiplyF (toCMatrix aM) (toCMatrix bM))
-
-multiplyI :: (Integral b) => Matrix CInt b -> Matrix CInt b -> IO(Matrix CInt b)
-multiplyI aM bM = liftM fromCMatrix (c_multiplyI (toCMatrix aM) (toCMatrix bM))
 
 c_dotProductD :: C_Vector CDouble -> C_Vector CDouble -> IO Double
 c_dotProductD aM bM = do

@@ -1,11 +1,12 @@
 # depslib dependency file v1.0
-1447210850 source:/home/andrew/Documents/github/matrix/src/main.c
+1448085286 source:/home/andrew/Documents/github/matrix/src/main.c
 	<stdio.h>
 	<string.h>
 	<stdlib.h>
 	<time.h>
 	"matrix.h"
 	"matrix-test.h"
+	"parse.h"
 
 1447583160 source:/home/andrew/Documents/github/matrix/src/matrix-test.c
 	<string.h>
@@ -13,7 +14,7 @@
 	"matrix.h"
 	"matrix-test.h"
 
-1447583148 source:/home/andrew/Documents/github/matrix/src/matrix.c
+1447939562 source:/home/andrew/Documents/github/matrix/src/matrix.c
 	"matrix.h"
 	<string.h>
 	<stdio.h>
@@ -21,4 +22,10 @@
 
 1447210850 source:/home/andrew/Documents/github/matrix/src/matrixError.c
 	"matrixError.h"
+
+1447894645 source:/home/andrew/Documents/github/matrix/src/parse.c
+	<stdlib.h>
+	<string.h>
+	<stdio.h>
+	"parse.h"
 

@@ -20,14 +20,16 @@ Test:
 #include <time.h>
 #include "matrix.h"
 #include "matrix-test.h"
+#include "parse.h"
 
 #define HELP_BUFF_LENGTH 10000
 
-#define NUM_ARGS_INVERT 5
-#define NUM_ARGS_TRANSPOSE 5
-#define NUM_ARGS_MULTIPLY 7
-#define NUM_ARGS_GENERATE 7
-#define NUM_ARGS_DETERMINANT 3
+#define NUM_ARGS_INVERT 6
+#define NUM_ARGS_TRANSPOSE 6
+#define NUM_ARGS_MULTIPLY 8
+#define NUM_ARGS_GENERATE 8
+#define NUM_ARGS_DETERMINANT 4
+
 
 /*
 The layout of this main file, is designed to be easily extensible for adding new tools.
@@ -48,6 +50,7 @@ writing brief descriptions is enough, to fully document a command line argument 
 
 #define HELP_CODE_SHORT "-h"
 #define HELP_CODE_LONG "--help"
+
 
 //The tool enumeration
 typedef enum
@@ -71,6 +74,7 @@ int test(int argc);
 
 int main(int argc, char* argv[])
 {
+
     //The aforementioned generated help message
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, NONE);
@@ -111,7 +115,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                puts("--mode must be accompanied by a valid mode\n");
+                puts("--tool must be accompanied by a valid mode\n");
                 puts(helpMessage);
                 return ARGUMENT_ERROR;
             }
@@ -180,63 +184,58 @@ enum
     D_HELP
 };
 
-//The argument struct, used to store information about each argument.
-typedef struct
-{
-    const char* longCode;
-    const char* shortCode;
-    const char* description;
-    int code;
-    BOOL mandatory;
-    char* value;
-} Argument;
 
 //These arrays store the command line arguments specific to each tool
 Argument argumentsInvert[NUM_ARGS_INVERT] =
 {
-    {.longCode="--dimension", .shortCode="-d", .description="The dimension, n, of the input nxn matrix", .code=I_DIMENSION, .mandatory=TRUE, .value=NULL},
-    {.longCode="--input", .shortCode="-i", .description="The name of the input file that contains the matrix to be inverted", .code=I_INPUT, .mandatory=TRUE, .value=NULL},
-    {.longCode="--output", .shortCode="-o", .description="The name of a file, which the inverted matrix will be written to", .code=I_OUTPUT, .mandatory=FALSE, .value=NULL},
-    {.longCode="--parallel", .shortCode="-p", .description="Control if program runs in parallel", .code=I_PARALLEL, .mandatory=FALSE, .value=NULL},
-    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=I_HELP, .mandatory=FALSE, .value=NULL}
+    NEW_ARG("--dimension", "-d", "The dimension, n, of the input nxn matrix", TRUE, INT, I_DIMENSION),
+    NEW_ARG("--input", "-i", "The name of the input file that contains the matrix to be inverted", TRUE, STRING, I_INPUT),
+    NEW_ARG("--output", "-o", "The name of a file, which the inverted matrix will be written to", FALSE, STRING, I_OUTPUT),
+    NEW_ARG("--parallel", "-p", "Control if program runs in parallel", FALSE, BOOLEAN, I_PARALLEL),
+    NEW_ARG(HELP_CODE_LONG, HELP_CODE_SHORT, "Display help message", FALSE, BOOLEAN, I_HELP),
+    NEW_ARG("--tool", "-t", "choose which tool to utilise, invert, transpose or multiply (default invert)", FALSE, STRING, 0)
 };
 
 Argument argumentsTranspose[NUM_ARGS_TRANSPOSE] =
 {
-    {.longCode="--width", .shortCode="-x", .description="The width, x, of the input x by y matrix", .code=T_WIDTH, .mandatory=TRUE, .value=NULL},
-    {.longCode="--height", .shortCode="-y", .description="The height, y, of the input x by y matrix", .code=T_HEIGHT, .mandatory=TRUE, .value=NULL},
-    {.longCode="--input", .shortCode="-i", .description="The name of the input file that contains the matrix to be transposed", .code=T_INPUT, .mandatory=TRUE, .value=NULL},
-    {.longCode="--output", .shortCode="-o", .description="The name of a file, which the transposed matrix will be written to", .code=T_OUTPUT, .mandatory=FALSE, .value=FALSE},
-    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=T_HELP, .mandatory=FALSE, .value=NULL}
+    NEW_ARG("--width", "-x", "The width, x, of the input x by y matrix", TRUE, INT, T_WIDTH),
+    NEW_ARG("--height", "-y", "The height, y, of the input x by y matrix", TRUE, INT, T_HEIGHT),
+    NEW_ARG("--input", "-i", "The name of the input file that contains the matrix to be transposed", TRUE, STRING, T_INPUT),
+    NEW_ARG("--output", "-o", "The name of a file, which the transposed matrix will be written to", FALSE, STRING, T_OUTPUT),
+    NEW_ARG(HELP_CODE_LONG, HELP_CODE_SHORT, "Display help message", FALSE, BOOLEAN, T_HELP),
+    NEW_ARG("--tool", "-t", "choose which tool to utilise, invert, transpose or multiply (default invert)", FALSE, STRING, 0)
 };
 
 Argument argumentsMultiply[NUM_ARGS_MULTIPLY] =
 {
-    {.longCode="--width", .shortCode="-x", .description="The width, x, of the first, leftmost, input x by y matrix", .code=M_WIDTH, .mandatory=TRUE, .value=NULL},
-    {.longCode="--height", .shortCode="-y", .description="The height, y, of the first, leftmost, input y by x matrix", .code=M_HEIGHT, .mandatory=TRUE, .value=NULL},
-    {.longCode="--input-one", .shortCode="-i1", .description="The name of the first input file that contains the matrix to be multiplied by the second matrix", .code=M_INPUT_ONE, .mandatory=TRUE, .value=NULL},
-    {.longCode="--input-two", .shortCode="-i2", .description="The name of the second input file that contains the matrix to be multiplied by the first matrix", .code=M_INPUT_TWO, .mandatory=TRUE, .value=NULL},
-    {.longCode="--output", .shortCode="-o", .description="The name of a file, which the resulting matrix will be written to", .code=M_OUTPUT, .mandatory=FALSE, .value=NULL},
-    {.longCode="--parallel", .shortCode="-p", .description="Control if program runs in parallel", .code=M_PARALLEL, .mandatory=FALSE, .value=NULL},
-    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=M_HELP, .mandatory=FALSE, .value=NULL}
+    NEW_ARG("--width", "-x", "The width, x, of the first, leftmost, input x by y matrix", TRUE, INT, M_WIDTH),
+    NEW_ARG("--height", "-y", "The height, y, of the first, leftmost, input y by x matrix", TRUE, INT, M_HEIGHT),
+    NEW_ARG("--input-one", "-i1", "The name of the first input file that contains the matrix to be multiplied by the second matrix", TRUE, STRING, M_INPUT_ONE),
+    NEW_ARG("--input-two", "-i2", "The name of the second input file that contains the matrix to be multiplied by the first matrix", TRUE, STRING, M_INPUT_TWO),
+    NEW_ARG("--output", "-o", "The name of a file, which the resulting matrix will be written to", FALSE, BOOLEAN, M_OUTPUT),
+    NEW_ARG("--parallel", "-p", "Control if program runs in parallel", FALSE, BOOLEAN, M_PARALLEL),
+    NEW_ARG(HELP_CODE_LONG, HELP_CODE_SHORT, "Display help message", FALSE, BOOLEAN, M_HELP),
+    NEW_ARG("--tool", "-t", "choose which tool to utilise, invert, transpose or multiply (default invert)", FALSE, STRING, 0)
 };
 
 Argument argumentsGenerate[NUM_ARGS_GENERATE] =
 {
-    {.longCode="--width", .shortCode="-x", .description="The width, x, of the output x by y matrix. x must be an integer.", .code=G_WIDTH, .mandatory=TRUE, .value=NULL},
-    {.longCode="--height", .shortCode="-y", .description="The height, y, of the output x by y matrix. y must be an integer.", .code=G_HEIGHT, .mandatory=TRUE, .value=NULL},
-    {.longCode="--datatype", .shortCode="-d", .description="Define if only integral or floating values should be returned", .code=G_DATATYPE, .mandatory=FALSE, .value=NULL},
-    {.longCode="--lower", .shortCode="-l", .description="The lowest value with which to fill the matrix", .code=G_LOWER, .mandatory=FALSE, .value=NULL},
-    {.longCode="--upper", .shortCode="-u", .description="The greatest value with which to fill the matrix", .code=G_UPPER, .mandatory=FALSE, .value=NULL},
-    {.longCode="--output", .shortCode="-o", .description="The name of a file which the matrix will be written to", .code=G_OUTPUT, .mandatory=FALSE, .value=NULL},
-    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=G_HELP, .mandatory=FALSE, .value=NULL}
+    NEW_ARG("--width", "-x", "The width, x, of the output x by y matrix. x must be an integer.", TRUE, INT, G_WIDTH),
+    NEW_ARG("--height", "-y", "The height, y, of the output x by y matrix. y must be an integer.", TRUE, INT, G_HEIGHT),
+    NEW_ARG("--datatype", "-d", "Define if only integral or floating values should be returned", FALSE, STRING, G_DATATYPE),
+    NEW_ARG("--lower", "-l", "The lowest value with which to fill the matrix", FALSE, INT, G_LOWER),
+    NEW_ARG("--upper", "-u", "The greatest value with which to fill the matrix", FALSE, INT, G_UPPER),
+    NEW_ARG("--output", "-o", "The name of a file which the matrix will be written to", FALSE, STRING, G_OUTPUT),
+    NEW_ARG(HELP_CODE_LONG, HELP_CODE_SHORT, "Display help message", FALSE, BOOLEAN, G_HELP),
+    NEW_ARG("--tool", "-t", "choose which tool to utilise, invert, transpose or multiply (default invert)", FALSE, STRING, 0)
 };
 
 Argument argumentsDeterminant[NUM_ARGS_DETERMINANT] =
 {
-    {.longCode="--dimension", .shortCode="-d", .description="The dimension, n, of the input nxn matrix", .code=D_DIMENSION, .mandatory=TRUE, .value=NULL},
-    {.longCode="--input", .shortCode="-i", .description="The name of the input file for which to find the determinant", .code=I_INPUT, .mandatory=TRUE, .value=NULL},
-    {.longCode=HELP_CODE_LONG, .shortCode=HELP_CODE_SHORT, .description="Display help message", .code=I_HELP, .mandatory=FALSE, .value=NULL}
+    NEW_ARG("--dimension", "-d", "The dimension, n, of the input nxn matrix", TRUE, INT, D_DIMENSION),
+    NEW_ARG("--input", "-i", "The name of the input file for which to find the determinant", TRUE, STRING, D_INPUT),
+    NEW_ARG(HELP_CODE_LONG, HELP_CODE_SHORT, "Display help message", FALSE, BOOLEAN, D_HELP),
+    NEW_ARG("--tool", "-t", "choose which tool to utilise, invert, transpose or multiply (default invert)", FALSE, STRING, 0)
 };
 
 //Invert tool
@@ -244,80 +243,15 @@ int invert(int argc, char* argv[])
 {
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, INVERT);
-    int i;
-    //Iterate through the command line arguments, they come in pairs, --flag value
-    for (i = 1; i < argc; i+=2)
-    {
-        //Ignore the --mode flag, its already bean dealt with (if present)
-        if (!strcmp(argv[i], TOOL_CODE_LONG) || !strcmp(argv[i], TOOL_CODE_SHORT))
-            continue;
 
-        //Deal with --help flag being the last argument
-        if (i+1 == argc && strcmp(argv[i], argumentsInvert[I_HELP].shortCode) && strcmp(argv[i], argumentsInvert[I_HELP].longCode))
-        {
-            printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return ARGUMENT_ERROR;
-        }
-
-        /*
-        Since C has no map, it is nessecairy to linear search through all possible arguments.
-        This is not a problem since the numbers are so small
-        */
-        int a;
-        for (a = 0; a < NUM_ARGS_INVERT; a++)
-        {
-            if (!strcmp(argv[i], argumentsInvert[a].longCode) || !strcmp(argv[i], argumentsInvert[a].shortCode))
-            {
-                /*The help flag is a special unary argument. If present, the program should print out
-                The help message, and nothing more*/
-                if (argumentsInvert[a].code == I_HELP)
-                {
-                    puts(helpMessage);
-                    return EXIT_SUCCESS;
-                }
-                argumentsInvert[a].value = argv[i+1];
-                break;
-            }
-            else if (a == NUM_ARGS_INVERT - 1)
-            {
-                /*If an invalid flag is passed to a tool, the program should print out a help message,
-                and exit in error*/
-                printf("Invert does not accept the argument: %s\n", argv[i]);
-                puts(helpMessage);
-                return ARGUMENT_ERROR;
-            }
-        }
-    }
-
-    for (i = 0; i < NUM_ARGS_INVERT; i++)
-    {
-        //With all arguments processed, the program still needs to check if all mandatory arguments have been passed
-        //If they have not, the program should return help and exit in error
-        if (argumentsInvert[i].value == NULL && argumentsInvert[i].mandatory)
-        {
-            puts("Must have at least:");
-            int a;
-            for (a = 0; a < NUM_ARGS_INVERT; a++)
-            {
-                if (argumentsInvert[a].mandatory)
-                {
-                    printf("\n\t%s or %s", argumentsInvert[a].shortCode, argumentsInvert[a].longCode);
-                }
-            }
-            printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return ARGUMENT_ERROR;
-        }
+    ParseError err = parse(argumentsInvert,NUM_ARGS_INVERT, argv, argc);
+    if (err.code != PARSE_SUCCESS){
+        printParseError(err);
+        return ARGUMENT_ERROR;
     }
 
     //Hold the dimension of the matrix in question
-    int dim;
-    //casting command line argument to integer requires checking
-    dim = atoi(argumentsInvert[I_DIMENSION].value);
-    if (!dim)
-    {
-        printf("%s is not a valid dimension, dimension must be an integer\n", argumentsInvert[I_DIMENSION].value);
-        return ARGUMENT_ERROR;
-    }
+    int dim = argumentsInvert[I_DIMENSION].value.i;
     if (dim <= 1)
     {
         PRINT_ERROR_CODE(DIMENSION_ERROR);
@@ -325,11 +259,11 @@ int invert(int argc, char* argv[])
     }
 
     //The input file pointer
-    FILE * fp = fopen(argumentsInvert[I_INPUT].value, "r");
+    FILE * fp = fopen(argumentsInvert[I_INPUT].value.s, "r");
     if (!fp)
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
-        printf("could not open file: %s\n", argumentsInvert[I_INPUT].value);
+        printf("could not open file: %s\n", argumentsInvert[I_INPUT].value.s);
         return FILE_IO_ERROR;
     }
 
@@ -366,34 +300,17 @@ int invert(int argc, char* argv[])
     /*The --parallel flag dictates if the program should be allowed to run using p-threads
     or instead, just use a single process. The matrix.h library exports two different versions
     of the invert function which allow this specification*/
-    BOOL para;
-    if (!argumentsInvert[I_PARALLEL].value)
-    {
-        para = TRUE;
-    }
-    else if (!strcmp(argumentsInvert[I_PARALLEL].value, "yes"))
-    {
-        para = TRUE;
-    }
-    else if (!strcmp(argumentsInvert[I_PARALLEL].value, "no"))
-    {
-        para = FALSE;
-    }
-    else
-    {
-        puts("parallel argument must be either \"yes\" or \"no\"");
-        return ARGUMENT_ERROR;
-    }
+    BOOL para = argumentsInvert[I_PARALLEL].value.b;
 
     //If the --output flag is given, then the inverted matrix must be written to the specified output file
-    if (argumentsInvert[I_OUTPUT].value)
+    if (argumentsInvert[I_OUTPUT].value.b)
     {
         //Open the file, and execute the required checks
-        FILE * out = fopen(argumentsInvert[I_OUTPUT].value, "w");
+        FILE * out = fopen(argumentsInvert[I_OUTPUT].value.s, "w");
         if (!out)
         {
             PRINT_ERROR_CODE(FILE_IO_ERROR);
-            printf("Failed to create file %s\n", argumentsInvert[I_OUTPUT].value);
+            printf("Failed to create file %s\n", argumentsInvert[I_OUTPUT].value.s);
             destroymD(&m);
             return FILE_IO_ERROR;
         }
@@ -499,78 +416,19 @@ int transpose(int argc, char* argv[])
 {
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, TRANSPOSE);
-    int i;
-    for (i = 1; i < argc; i+=2)
-    {
-        if (!strcmp(argv[i], TOOL_CODE_LONG) || !strcmp(argv[i], TOOL_CODE_SHORT))
-        {
-            continue;
-        }
-        //Deal with --help flag being the last argument
-        if (i+1 == argc && strcmp(argv[i], argumentsTranspose[T_HELP].shortCode) && strcmp(argv[i], argumentsTranspose[T_HELP].longCode))
-        {
-            printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return ARGUMENT_ERROR;
-        }
-        //Find if the given flag matches a Transpose flag
-        int a;
-        for (a = 0; a < NUM_ARGS_TRANSPOSE; a++)
-        {
-            if (!strcmp(argv[i], argumentsTranspose[a].longCode) || !strcmp(argv[i], argumentsTranspose[a].shortCode))
-            {
-                //Deal with the --help argument
-                if (argumentsTranspose[a].code == T_HELP)
-                {
-                    puts(helpMessage);
-                    return SUCCESS;
-                }
-                argumentsTranspose[a].value = argv[i+1];
-                break;
-            }
-            else if (a == NUM_ARGS_TRANSPOSE - 1)
-            {
-                //Deal with invalid argument being passed
-                printf("Transpose does not accept the argument: %s\n", argv[i]);
-                puts(helpMessage);
-                return ARGUMENT_ERROR;
-            }
-        }
-    }
 
-    for (i = 0; i < NUM_ARGS_TRANSPOSE; i++)
-    {
-        //Check if all mandatory arguments are given
-        if (argumentsTranspose[i].value == NULL && argumentsTranspose[i].mandatory)
-        {
-            puts("Must have at least:");
-            int a;
-            for (a = 0; a < NUM_ARGS_INVERT; a++)
-            {
-                if (argumentsTranspose[a].mandatory)
-                {
-                    printf("\n\t%s or %s", argumentsTranspose[a].shortCode, argumentsTranspose[a].longCode);
-                }
-            }
-            printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return ARGUMENT_ERROR;
-        }
+    ParseError err = parse(argumentsTranspose, NUM_ARGS_TRANSPOSE, argv, argc);
+
+    if (err.code != PARSE_SUCCESS){
+        printParseError(err);
+        return ARGUMENT_ERROR;
     }
 
     //Hold the width and height of the matrix in question
     int width, height;
     //casting command line argument to integer requires checking
-    width = atoi(argumentsTranspose[T_WIDTH].value);
-    height = atoi(argumentsTranspose[T_HEIGHT].value);
-    if (!width)
-    {
-        printf("%s is not a valid width, dimension must be an integer\n", argumentsTranspose[T_WIDTH].value);
-        return ARGUMENT_ERROR;
-    }
-    else if (!height)
-    {
-        printf("%s is not a valid height, dimension must be an integer\n", argumentsTranspose[T_HEIGHT].value);
-        return ARGUMENT_ERROR;
-    }
+    width = argumentsTranspose[T_WIDTH].value.i;
+    height = argumentsTranspose[T_HEIGHT].value.i;
 
     if (width < 1 || height < 1)
     {
@@ -579,11 +437,11 @@ int transpose(int argc, char* argv[])
     }
 
     //Deal with the input file
-    FILE * fp = fopen(argumentsTranspose[T_INPUT].value, "r");
+    FILE * fp = fopen(argumentsTranspose[T_INPUT].value.s, "r");
     if (!fp)
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
-        printf("could not open file: %s\n", argumentsTranspose[T_INPUT].value);
+        printf("could not open file: %s\n", argumentsTranspose[T_INPUT].value.s);
         return FILE_IO_ERROR;
     }
 
@@ -618,14 +476,14 @@ int transpose(int argc, char* argv[])
     free(data);
 
     //If an output file is specified, then the data must be written there
-    if (argumentsTranspose[T_OUTPUT].value)
+    if (argumentsTranspose[T_OUTPUT].value.b)
     {
         //Open output file
-        FILE * out = fopen(argumentsTranspose[T_OUTPUT].value, "w");
+        FILE * out = fopen(argumentsTranspose[T_OUTPUT].value.s, "w");
         if (!out)
         {
             PRINT_ERROR_CODE(FILE_IO_ERROR);
-            printf("Failed to create file %s\n", argumentsTranspose[T_OUTPUT].value);
+            printf("Failed to create file %s\n", argumentsTranspose[T_OUTPUT].value.s);
             destroymD(&m);
             return FILE_IO_ERROR;
         }
@@ -673,74 +531,18 @@ int multiply(int argc, char* argv[])
 {
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, MULTIPLY);
-    int i;
-    for (i = 1; i < argc; i+=2)
-    {
-        if (!strcmp(argv[i], TOOL_CODE_LONG) || !strcmp(argv[i], TOOL_CODE_SHORT))
-        {
-            continue;
-        }
-        //Deal with --help flag being the last argument
-        if (i+1 == argc && strcmp(argv[i], argumentsMultiply[M_HELP].shortCode) && strcmp(argv[i], argumentsMultiply[M_HELP].longCode))
-        {
-            printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return ARGUMENT_ERROR;
-        }
-        int a;
-        for (a = 0; a < NUM_ARGS_MULTIPLY; a++)
-        {
-            if (!strcmp(argv[i], argumentsMultiply[a].longCode) || !strcmp(argv[i], argumentsMultiply[a].shortCode))
-            {
-                if (argumentsMultiply[a].code == M_HELP)
-                {
-                    puts(helpMessage);
-                    return SUCCESS;
-                }
-                argumentsMultiply[a].value = argv[i+1];
-                break;
-            }
-            else if (a == NUM_ARGS_TRANSPOSE - 1)
-            {
-                printf("Invert does not accept the argument: %s\n", argv[i]);
-                puts(helpMessage);
-                return ARGUMENT_ERROR;
-            }
-        }
-    }
 
-    for (i = 0; i < NUM_ARGS_MULTIPLY; i++)
-    {
-        if (argumentsMultiply[i].value == NULL && argumentsMultiply[i].mandatory)
-        {
-            puts("Must have at least:");
-            int a;
-            for (a = 0; a < NUM_ARGS_MULTIPLY; a++)
-            {
-                if (argumentsMultiply[a].mandatory)
-                {
-                    printf("\n\t%s or %s", argumentsMultiply[a].shortCode, argumentsMultiply[a].longCode);
-                }
-            }
-            printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return ARGUMENT_ERROR;
-        }
+    ParseError err = parse(argumentsMultiply, NUM_ARGS_INVERT, argv, argc);
+    if (err.code != PARSE_SUCCESS){
+        printParseError(err);
+        return ARGUMENT_ERROR;
     }
 
     //Hold the dimension of the matrix in question
     int width, height;
     //casting command line argument to integer requires much checking
-    width = atoi(argumentsMultiply[M_WIDTH].value);
-    height = atoi(argumentsMultiply[M_HEIGHT].value);
-    if (!width)
-    {
-        printf("%s is not a valid width, width must be an integer\n", argumentsMultiply[M_WIDTH].value);
-        return ARGUMENT_ERROR;
-    }
-    else if (!height)
-    {
-        printf("%s is not a valid height, height must be an integer\n", argumentsMultiply[M_HEIGHT].value);
-        return ARGUMENT_ERROR;
-    }
+    width = argumentsMultiply[M_WIDTH].value.i;
+    height = argumentsMultiply[M_HEIGHT].value.i;
 
     if (width < 1 || height < 1)
     {
@@ -748,18 +550,18 @@ int multiply(int argc, char* argv[])
         return DIMENSION_ERROR;
     }
 
-    FILE * fp1 = fopen(argumentsMultiply[M_INPUT_ONE].value, "r");
-    FILE * fp2 = fopen(argumentsMultiply[M_INPUT_TWO].value, "r");
+    FILE * fp1 = fopen(argumentsMultiply[M_INPUT_ONE].value.s, "r");
+    FILE * fp2 = fopen(argumentsMultiply[M_INPUT_TWO].value.s, "r");
     if (!fp1)
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
-        printf("could not open file: %s\n", argumentsMultiply[M_INPUT_ONE].value);
+        printf("could not open file: %s\n", argumentsMultiply[M_INPUT_ONE].value.s);
         return FILE_IO_ERROR;
     }
     if (!fp2)
     {
         PRINT_ERROR_CODE(FILE_IO_ERROR);
-        printf("could not open file: %s\n", argumentsMultiply[M_INPUT_TWO].value);
+        printf("could not open file: %s\n", argumentsMultiply[M_INPUT_TWO].value.s);
         return FILE_IO_ERROR;
     }
 
@@ -803,32 +605,15 @@ int multiply(int argc, char* argv[])
     }
     free(data2);
 
-    BOOL para;
-    if (!argumentsMultiply[M_PARALLEL].value)
-    {
-        para = TRUE;
-    }
-    else if (!strcmp(argumentsMultiply[M_PARALLEL].value, "yes"))
-    {
-        para = TRUE;
-    }
-    else if (!strcmp(argumentsMultiply[M_PARALLEL].value, "no"))
-    {
-        para = FALSE;
-    }
-    else
-    {
-        puts("parallel argument must be either \"yes\" or \"no\"");
-        return ARGUMENT_ERROR;
-    }
+    BOOL para = argumentsMultiply[M_PARALLEL].value.b;
 
-    if (argumentsMultiply[M_OUTPUT].value)
+    if (argumentsMultiply[M_OUTPUT].value.b)
     {
-        FILE * out = fopen(argumentsMultiply[M_OUTPUT].value, "w");
+        FILE * out = fopen(argumentsMultiply[M_OUTPUT].value.s, "w");
         if (!out)
         {
             PRINT_ERROR_CODE(FILE_IO_ERROR);
-            printf("Failed to create file %s\n", argumentsMultiply[M_OUTPUT].value);
+            printf("Failed to create file %s\n", argumentsMultiply[M_OUTPUT].value.s);
             destroymD(&m1);
             destroymD(&m2);
             return FILE_IO_ERROR;
@@ -931,94 +716,26 @@ int generate(int argc, char* argv[])
 {
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, GENERATE);
-    int i;
-    //Iterate through the command line arguments, they come in pairs, --flag value
-    for (i = 1; i < argc; i+=2)
-    {
-        //Ignore the --mode flag, its already bean dealt with (if present)
-        if (!strcmp(argv[i], TOOL_CODE_LONG) || !strcmp(argv[i], TOOL_CODE_SHORT))
-            continue;
 
-        //Deal with --help flag being the last argument
-        if (i+1 == argc && strcmp(argv[i], argumentsGenerate[G_HELP].shortCode) && strcmp(argv[i], argumentsGenerate[G_HELP].longCode))
-        {
-            printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return ARGUMENT_ERROR;
-        }
-
-        /*
-        Since C has no map, it is nessecairy to linear search through all possible arguments.
-        This is not a problem since the numbers are so small
-        */
-        int a;
-        for (a = 0; a < NUM_ARGS_GENERATE; a++)
-        {
-            if (!strcmp(argv[i], argumentsGenerate[a].longCode) || !strcmp(argv[i], argumentsGenerate[a].shortCode))
-            {
-                /*The help flag is a special unary argument. If present, the program should print out
-                The help message, and nothing more*/
-                if (argumentsGenerate[a].code == G_HELP)
-                {
-                    puts(helpMessage);
-                    return SUCCESS;
-                }
-                argumentsGenerate[a].value = argv[i+1];
-                break;
-            }
-            else if (a == NUM_ARGS_GENERATE - 1)
-            {
-                /*If an invalid flag is passed to a tool, the program should print out a help message,
-                and exit in error*/
-                printf("Generate does not accept the argument: %s\n", argv[i]);
-                puts(helpMessage);
-                return ARGUMENT_ERROR;
-            }
-        }
+    ParseError err = parse(argumentsGenerate, NUM_ARGS_GENERATE, argv, argc);
+    if (err.code != PARSE_SUCCESS){
+        printParseError(err);
+        printf("code: %d\n", err.code);
+        return ARGUMENT_ERROR;
     }
 
-    for (i = 0; i < NUM_ARGS_GENERATE; i++)
-    {
-        //With all arguments processed, the program still needs to check if all mandatory arguments have been passed
-        //If they have not, the program should return help and exit in error
-        if (argumentsGenerate[i].value == NULL && argumentsGenerate[i].mandatory)
-        {
-            puts("Must have at least:");
-            int a;
-            for (a = 0; a < NUM_ARGS_GENERATE; a++)
-            {
-                if (argumentsGenerate[a].mandatory)
-                {
-                    printf("\n\t%s or %s", argumentsGenerate[a].shortCode, argumentsGenerate[a].longCode);
-                }
-            }
-            printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            return ARGUMENT_ERROR;
-        }
-    }
-
-    if(!argumentsGenerate[G_DATATYPE].value)
-        argumentsGenerate[G_DATATYPE].value = "integer";
+    if(!argumentsGenerate[G_DATATYPE].value.b)
+        argumentsGenerate[G_DATATYPE].value.s = "integer";
 
     //Hold the dimension of the matrix in question
     int dimX, dimY;
     //casting command line argument to integer requires checking
-    dimX = atoi(argumentsGenerate[G_WIDTH].value);
-    dimY = atoi(argumentsGenerate[G_HEIGHT].value);
-    if (!dimX)
-    {
-        printf("%s is not a valid dimension, dimension must be an integer\n", argumentsGenerate[G_WIDTH].value);
-        return ARGUMENT_ERROR;
-    }
+    dimX = argumentsGenerate[G_WIDTH].value.i;
+    dimY = argumentsGenerate[G_HEIGHT].value.i;
     if (dimX <= 1)
     {
         PRINT_ERROR_CODE(DIMENSION_ERROR);
         return DIMENSION_ERROR;
-    }
-
-    if (!dimY)
-    {
-        printf("%s is not a valid dimension, dimension must be an integer\n", argumentsGenerate[G_HEIGHT].value);
-        return ARGUMENT_ERROR;
     }
     if (dimY <= 1)
     {
@@ -1027,25 +744,25 @@ int generate(int argc, char* argv[])
     }
 
     int lower, upper;
-    if (argumentsGenerate[G_LOWER].value)
+    if (argumentsGenerate[G_LOWER].value.i)
     {
-        lower = atoi(argumentsGenerate[G_LOWER].value);
+        lower = argumentsGenerate[G_LOWER].value.i;
     }
     else
     {
         lower = -100;
     }
 
-    if (argumentsGenerate[G_UPPER].value)
+    if (argumentsGenerate[G_UPPER].value.i)
     {
-        upper = atoi(argumentsGenerate[G_UPPER].value);
+        upper = argumentsGenerate[G_UPPER].value.i;
     }
     else
     {
         upper = 100;
     }
 
-    if (!strcmp(argumentsGenerate[G_DATATYPE].value, "float"))
+    if (!strcmp(argumentsGenerate[G_DATATYPE].value.s, "float"))
     {
         floatMatrix m = DEFAULT_MATRIX;
         MatrixError e;
@@ -1068,9 +785,9 @@ int generate(int argc, char* argv[])
                 insertAtF(&m, (float)(lower + (rand() % (upper - lower)) + ((float)rand()/(float)RAND_MAX)), x, y);
             }
         }
-        if (argumentsGenerate[G_OUTPUT].value)
+        if (argumentsGenerate[G_OUTPUT].value.s)
         {
-            FILE *fp = fopen(argumentsGenerate[G_OUTPUT].value, "w");
+            FILE *fp = fopen(argumentsGenerate[G_OUTPUT].value.s, "w");
             if (!fp)
             {
                 PRINT_ERROR_CODE(FILE_IO_ERROR);
@@ -1098,7 +815,7 @@ int generate(int argc, char* argv[])
         }
         destroymF(&m);
     }
-    else if (!strcmp(argumentsGenerate[G_DATATYPE].value, "integer"))
+    else if (!strcmp(argumentsGenerate[G_DATATYPE].value.s, "integer"))
     {
         intMatrix m = DEFAULT_MATRIX;
         MatrixError e;
@@ -1121,9 +838,9 @@ int generate(int argc, char* argv[])
                 insertAtI(&m, lower + (rand() % (upper - lower)), x, y);
             }
         }
-        if (argumentsGenerate[G_OUTPUT].value)
+        if (argumentsGenerate[G_OUTPUT].value.s)
         {
-            FILE *fp = fopen(argumentsGenerate[G_OUTPUT].value, "w");
+            FILE *fp = fopen(argumentsGenerate[G_OUTPUT].value.s, "w");
             if (!fp)
             {
                 PRINT_ERROR_CODE(FILE_IO_ERROR);
@@ -1154,96 +871,34 @@ int generate(int argc, char* argv[])
     }
     else
     {
-        printf("datatype must be either integer or float, %s was given\n", argumentsGenerate[G_DATATYPE].value);
+        printf("datatype must be either integer or float, %s was given\n", argumentsGenerate[G_DATATYPE].value.s);
         return ARGUMENT_ERROR;
     }
-    return ARGUMENT_ERROR;
+    return SUCCESS;
 }
 
 int determinant(int argc, char* argv[])
 {
     char helpMessage[HELP_BUFF_LENGTH] = {'\0'};
     getHelpMessage(helpMessage, DETERMINANT);
-    int i;
-    //Iterate through the command line arguments, they come in pairs, --flag value
-    for (i = 1; i < argc; i+=2)
-    {
-        //Ignore the --mode flag, its already bean dealt with (if present)
-        if (!strcmp(argv[i], TOOL_CODE_LONG) || !strcmp(argv[i], TOOL_CODE_SHORT))
-            continue;
 
-        //Deal with --help flag being the last argument
-        if (i+1 == argc && strcmp(argv[i], argumentsDeterminant[D_HELP].shortCode) && strcmp(argv[i], argumentsDeterminant[D_HELP].longCode))
-        {
-            printf("Incorrect command line arguments, mismatch on %s\n", argv[i]);
-            return ARGUMENT_ERROR;
-        }
-
-        /*
-        Since C has no map, it is nessecairy to linear search through all possible arguments.
-        This is not a problem since the numbers are so small
-        */
-        int a;
-        for (a = 0; a < NUM_ARGS_DETERMINANT; a++)
-        {
-            if (!strcmp(argv[i], argumentsDeterminant[a].longCode) || !strcmp(argv[i], argumentsDeterminant[a].shortCode))
-            {
-                /*The help flag is a special unary argument. If present, the program should print out
-                The help message, and nothing more*/
-                if (argumentsDeterminant[a].code == D_HELP)
-                {
-                    puts(helpMessage);
-                    return EXIT_SUCCESS;
-                }
-                argumentsDeterminant[a].value = argv[i+1];
-                break;
-            }
-            else if (a == NUM_ARGS_DETERMINANT - 1)
-            {
-                /*If an invalid flag is passed to a tool, the program should print out a help message,
-                and exit in error*/
-                printf("Invert does not accept the argument: %s\n", argv[i]);
-                puts(helpMessage);
-                return ARGUMENT_ERROR;
-            }
-        }
-    }
-
-    for (i = 0; i < NUM_ARGS_DETERMINANT; i++)
-    {
-        //With all arguments processed, the program still needs to check if all mandatory arguments have been passed
-        //If they have not, the program should return help and exit in error
-        if (argumentsDeterminant[i].value == NULL && argumentsDeterminant[i].mandatory)
-        {
-            puts("Must have at least:");
-            int a;
-            for (a = 0; a < NUM_ARGS_DETERMINANT; a++)
-            {
-                if (argumentsDeterminant[a].mandatory)
-                {
-                    printf("\n\t%s or %s", argumentsDeterminant[a].shortCode, argumentsDeterminant[a].longCode);
-                }
-            }
-            printf("\n\t or use the %s or %s flag to display help\n%s\n", HELP_CODE_LONG, HELP_CODE_SHORT, helpMessage);
-            puts(helpMessage);
-            return ARGUMENT_ERROR;
-        }
-    }
-
-    int dim = atoi(argumentsDeterminant[D_DIMENSION].value);
-    if (!dim){
-        printf("Invalid dimension given %s\n", argumentsDeterminant[D_DIMENSION].value);
+    ParseError err = parse(argumentsDeterminant, NUM_ARGS_DETERMINANT, argv, argc);
+    if (err.code != PARSE_SUCCESS){
+        printParseError(err);
         return ARGUMENT_ERROR;
-    } else if (dim <= 1){
+    }
+
+    int dim = argumentsDeterminant[D_DIMENSION].value.i;
+    if (dim <= 1){
         printf("Dimension must be greater than 1, %d given\n", dim);
         return DIMENSION_ERROR;
     }
 
-    FILE * fp = fopen(argumentsDeterminant[D_INPUT].value, "r");
+    FILE * fp = fopen(argumentsDeterminant[D_INPUT].value.s, "r");
 
     if (!fp){
         PRINT_ERROR_CODE(FILE_IO_ERROR);
-        printf("could not open file: %s\n", argumentsDeterminant[D_INPUT].value);
+        printf("could not open file: %s\n", argumentsDeterminant[D_INPUT].value.s);
         return FILE_IO_ERROR;
     }
 
@@ -1285,7 +940,7 @@ int test(int argc)
     //test does not take any command line arguments
     if (argc > 3)
     {
-        puts("unit-test does not take any command line arguments\n");
+        puts("test does not take any command line arguments\n");
         return ARGUMENT_ERROR;
     }
     puts("Testing:");
@@ -1296,7 +951,7 @@ int test(int argc)
 void getHelpMessage(char * dest, TOOL tool)
 {
     int lim = 0;
-    Argument * args = NULL;
+    Argument * args=NULL;
     switch(tool)
     {
     case INVERT :
@@ -1341,17 +996,17 @@ void getHelpMessage(char * dest, TOOL tool)
         if (!args[i].mandatory)
         {
             strcat(dest, "   [");
-            strcat(dest, args[i].shortCode);
+            strcat(dest, args[i].shortcode);
             strcat(dest, " | ");
-            strcat(dest, args[i].longCode);
+            strcat(dest, args[i].longcode);
             strcat(dest, "]  ");
         }
         else
         {
             strcat(dest, "   ");
-            strcat(dest, args[i].shortCode);
+            strcat(dest, args[i].shortcode);
             strcat(dest, " | ");
-            strcat(dest, args[i].longCode);
+            strcat(dest, args[i].longcode);
         }
     }
     switch(tool)
@@ -1383,12 +1038,12 @@ void getHelpMessage(char * dest, TOOL tool)
     }
     for (i = 0; i < lim; i++)
     {
-        strcat(dest, args[i].shortCode);
+        strcat(dest, args[i].shortcode);
         strcat(dest, ", ");
-        strcat(dest, args[i].longCode);
+        strcat(dest, args[i].longcode);
         strcat(dest, ": ");
         strcat(dest, args[i].description);
         strcat(dest, "\n\t");
     }
-    strcat(dest, "-t, --tool: choose which tool to utilise, invert, transpose or multiply (default invert)\n");
 }
+

@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="--tool test" />
+				<Option parameters="--tool generate -l -1 --width 5 -y 100 --parallel" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -36,6 +36,7 @@
 		<Unit filename="include/matrix-test.h" />
 		<Unit filename="include/matrix.h" />
 		<Unit filename="include/matrixError.h" />
+		<Unit filename="include/parse.h" />
 		<Unit filename="src/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -46,6 +47,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/matrixError.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/parse.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>

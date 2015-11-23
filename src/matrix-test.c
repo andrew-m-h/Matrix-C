@@ -7,6 +7,7 @@ Created by Andrew M. Hall
 #include "matrix.h"
 #include "matrix-test.h"
 
+
 const double testDataD[] =
 {
     -10.5002, 	3.2864, 	11.9539, 	-13.3095, 	-4.5435,

@@ -14,6 +14,7 @@ allows the inverse of a 11x11 matrix to be calculated in reasonable time.
 #define DEFAULT_MATRIX {NULL, 0, 0}
 #define NTHREADS 40
 
+
 //Basic Matrix data types. Matrices are implemented on top of a 1D dynamically allocated array.
 //All functions will be implemented three times to work on each one of these Matrices.
 typedef struct
@@ -42,6 +43,7 @@ typedef enum {
     FALSE = 0,
     TRUE
 } BOOL;
+
 
 //Matrix constructors
 MatrixError matrixD(doubleMatrix * dest, const double * in_data, int in_width, int in_height);
